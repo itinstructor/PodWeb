@@ -1,4 +1,4 @@
-﻿# Aquaponics Web Application
+﻿# Pods In Space Web Application
 
 ## Setup Instructions for Windows Server 2025 and Waitress
 
@@ -36,7 +36,7 @@
 ### Setup Waitress with Windows Server IIS
 
 1. Setup folder under inetpub for flask application
-3. Configure IIS to use the virtual environment Python interpreter with web.config
+2. Configure IIS to use the virtual environment Python interpreter with web.config
 
 ---
 
