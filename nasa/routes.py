@@ -3,7 +3,7 @@ from flask import current_app, render_template
 from . import nasa_bp
 try:
     from sqlalchemy.orm import selectinload
-    from main_app import db
+    from database import db  # Fixed: import from database.py to avoid circular import
 except Exception:
     db = None  # fallback if not needed in this module path
 

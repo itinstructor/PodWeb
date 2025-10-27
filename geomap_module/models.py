@@ -1,4 +1,4 @@
-﻿# filepath: c:\inetpub\aquaponics\geomap_module\models.py
+﻿# filepath: c:\inetpub\podsinspace\geomap_module\models.py
 # This file defines the database model for storing visitor location data.
 # Comments added to help a community college student understand each part.
 

@@ -72,11 +72,22 @@ logger.info("=== Waitress app logging configured with daily rotation ===")
 logger.info(f"Script directory: {SCRIPT_DIR}")
 logger.info(f"Current working directory: {os.getcwd()}")
 logger.info(f"Log file: {LOG_FILE}")
+try:
+    logger.info(f"Env HTTP_PLATFORM_PORT: {os.environ.get('HTTP_PLATFORM_PORT')}")
+    logger.info(f"Env PYTHONPATH: {os.environ.get('PYTHONPATH')}")
+    logger.info(f"Env PATH contains venv Scripts: {'\\.venv\\Scripts' in os.environ.get('PATH','')}")
+except Exception:
+    pass
 logger.info("Flask app imported successfully")
 
 
 def main():
-    port = int(os.environ.get("HTTP_PLATFORM_PORT", 8080))
+    # Prefer IIS-provided port; fall back to 8080 for local/manual runs
+    port_env = os.environ.get("HTTP_PLATFORM_PORT")
+    try:
+        port = int(port_env) if port_env else 8080
+    except Exception:
+        port = 8080
     host = "127.0.0.1"
 
     logger.info(f"Starting Waitress server on {host}:{port}")
@@ -91,7 +102,7 @@ def main():
             connection_limit=1000,
         )
     except Exception as e:
-        logger.error(f"Failed to start Waitress: {e}")
+        logger.exception(f"Failed to start Waitress: {e}")
         exit(1)
 
 

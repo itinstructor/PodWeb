@@ -1,6 +1,6 @@
 ﻿/*
  * =============================================================================
- * STREAM MANAGER - Handles live video streaming from the aquaponics camera
+ * STREAM MANAGER - Handles live video streaming from the podsinspace camera
  * =============================================================================
  * This code manages the live video feed on the webpage. It handles:
  * - Loading the video stream
@@ -215,7 +215,7 @@ class StreamManager {
             const params = new URLSearchParams(url.search);
             
             // Send warmup request to server
-            const warmupUrl = '/aquaponics/warmup_relay?' + params.toString();
+            const warmupUrl = '/podsinspace/warmup_relay?' + params.toString();
             const response = await fetch(warmupUrl);
             const data = await response.json();
             
@@ -395,7 +395,7 @@ class StreamManager {
             
             try {
                 // Ask server about relay status
-                const response = await fetch('/aquaponics/relay_status');
+                const response = await fetch('/podsinspace/relay_status');
                 const data = await response.json();
                 
                 // =====================================================================

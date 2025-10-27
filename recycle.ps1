@@ -1,5 +1,5 @@
 ﻿param(
-  [string]$PoolName = "AquaponicsPool"
+  [string]$PoolName = "PodsInSpacePool"
 )
 
 # Require elevation
@@ -36,9 +36,9 @@ if (Test-Path $appcmd) {
   Write-Error "appcmd.exe not found at $appcmd. Cannot recycle application pool."
   exit 2
 }
-```// filepath: c:\inetpub\aquaponics\recycle_aquaponics_pool.ps1
+```// filepath: c:\inetpub\PodsInSpacePool\recycle_podsinspace_pool.ps1
 param(
-  [string]$PoolName = "AquaponicsPool"
+  [string]$PoolName = "PodsInSpacePool"
 )
 
 # Require elevation

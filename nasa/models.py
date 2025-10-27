@@ -1,5 +1,5 @@
 ﻿try:
-    from main_app import db
+    from database import db  # Fixed: import from database.py to avoid circular import
 except ImportError:
     from flask_sqlalchemy import SQLAlchemy
     db = SQLAlchemy()

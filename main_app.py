@@ -1,8 +1,8 @@
 ﻿#!/usr/bin/env python3
 """
 Flask web application that shows two live MJPEG camera streams:
- - Fish Tank (camera 0)
- - Plant Bed (camera 2 mapped as /stream1.mjpg on the Pi side)
+ - Pod Tank (camera 0)
+ - (camera 2 mapped as /stream1.mjpg on the Pi side)
 
 Designed with clear comments for learners.
 This version keeps:
@@ -84,12 +84,12 @@ logging.info("Application start")
 # ---------------------------------------------------------------------------
 # FLASK APP SETUP
 # ---------------------------------------------------------------------------
-# static_url_path lets static files be served under /aquaponics/static
+# static_url_path lets static files be served under /podsinspace/static
 app = Flask(__name__, 
            static_folder='static',
-           static_url_path='/aquaponics/static')
+           static_url_path='/podsinspace/static')
 
-app.config['APPLICATION_ROOT'] = '/aquaponics'
+app.config['APPLICATION_ROOT'] = '/podsinspace'
 # ---------------------------------------------------------------------------
 # DATABASE SETUP
 # ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ logging.info(f"Secret key configured: {app.config['SECRET_KEY'][:10]}...")
 db.init_app(app)
 
 # Register the geomap blueprint for visitor tracking
-app.register_blueprint(geomap_bp, url_prefix="/aquaponics")
+app.register_blueprint(geomap_bp, url_prefix="/podsinspace")
 
 # Register Mars Blog blueprint - KEEP THIS BLOCK, remove the import at top
 logging.info("Attempting to import Mars Blog blueprint...")
@@ -136,8 +136,8 @@ try:
     from nasa import nasa_bp  # Import here, just before registration
 
     logging.info(f"Mars Blog blueprint imported: {nasa_bp}")
-    app.register_blueprint(nasa_bp, url_prefix="/aquaponics/nasa")
-    logging.info("Mars Blog blueprint registered at /aquaponics/nasa")
+    app.register_blueprint(nasa_bp, url_prefix="/podsinspace/nasa")
+    logging.info("Mars Blog blueprint registered at /podsinspace/nasa")
 except Exception as e:
     logging.exception("Failed to register Mars Blog blueprint")
     logging.error(f"Error details: {str(e)}")
@@ -164,15 +164,15 @@ def track_visitor():
     """
     # Skip tracking for static files, API endpoints, and health checks
     if (
-        request.path.startswith("/aquaponics/static/")
-        or request.path.startswith("/aquaponics/api/")
+        request.path.startswith("/podsinspace/static/")
+        or request.path.startswith("/podsinspace/api/")
         or request.path
         in [
-            "/aquaponics/health",
-            "/aquaponics/server_info",
-            "/aquaponics/waitress_info",
+            "/podsinspace/health",
+            "/podsinspace/server_info",
+            "/podsinspace/waitress_info",
         ]
-        or request.path == "/aquaponics/stream_proxy"
+        or request.path == "/podsinspace/stream_proxy"
     ):
         return
 
@@ -308,7 +308,7 @@ def get_media_relay(stream_url: str) -> CachedMediaRelay:
 # ---------------------------------------------------------------------------
 # ROUTES: WEB PAGES
 # ---------------------------------------------------------------------------
-@app.route("/aquaponics", methods=["GET", "POST"])
+@app.route("/podsinspace", methods=["GET", "POST"])
 def index():
     """
     Main page. Builds two proxy URLs (one per camera) and passes them
@@ -338,49 +338,42 @@ def index():
 
 
 # Champions page route
-@app.route("/aquaponics/champions")
+@app.route("/podsinspace/champions")
 def champions():
-    """Page recognizing Aquaponics Champions."""
+    """Page recognizing podsinspace Champions."""
     return render_template("champions.html")
 
 
-@app.route("/aquaponics/about")
+@app.route("/podsinspace/about")
 def about():
     """Static About page."""
     return render_template("about.html")
 
 
-@app.route("/aquaponics/contact")
+@app.route("/podsinspace/contact")
 def contact():
     """Static Contact page."""
     return render_template("contact.html")
 
 
-@app.route("/aquaponics/sensors")
+@app.route("/podsinspace/sensors")
 def sensors():
     """Sensor dashboard page (template only here)."""
     return render_template("sensors.html")
 
 
-@app.route("/aquaponics/photos")
+@app.route("/podsinspace/photos")
 def photos():
     """Photo gallery page."""
     return render_template("photos.html")
 
-
-@app.route("/aquaponics/photos_nasa")
-def photos_nasa():
-    """NASA photo gallery page."""
-    return render_template("photos_nasa.html")
-
-
-@app.route("/aquaponics/stats")
+@app.route("/podsinspace/stats")
 def stats_page():
     """HTML page that displays waitress/server streaming statistics."""
     return render_template("waitress_stats.html")
 
 
-@app.route("/aquaponics/nasa")
+@app.route("/podsinspace/nasa")
 def nasa():
     """Render the NASA hub page."""
     return redirect(url_for("nasa_bp.index"))
@@ -389,7 +382,7 @@ def nasa():
 # ---------------------------------------------------------------------------
 # STREAM PROXY ENDPOINT
 # ---------------------------------------------------------------------------
-@app.route("/aquaponics/stream_proxy")
+@app.route("/podsinspace/stream_proxy")
 def stream_proxy():
     """
     Proxies an upstream MJPEG stream through this server.
@@ -455,7 +448,7 @@ def stream_proxy():
     )
 
 
-@app.route("/aquaponics/health")
+@app.route("/podsinspace/health")
 def health():
     """
     Simple health check used by monitoring or load balancers.
@@ -464,7 +457,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.route("/aquaponics/server_info")
+@app.route("/podsinspace/server_info")
 def server_info():
     import threading
 
@@ -475,7 +468,7 @@ def server_info():
     }
 
 
-@app.route("/aquaponics/waitress_info")
+@app.route("/podsinspace/waitress_info")
 def waitress_info():
     """
     Runtime diagnostics focused on Waitress + streaming load.
@@ -509,7 +502,7 @@ def waitress_info():
     }
 
 
-@app.route("/aquaponics/debug/visitors")
+@app.route("/podsinspace/debug/visitors")
 def debug_visitors():
     """Debug endpoint - converts UTC timestamps to Mountain Time for display only."""
     try:
@@ -570,7 +563,7 @@ def debug_visitors():
         return {"error": str(e), "traceback": traceback.format_exc()}, 500
 
 
-@app.route("/aquaponics/debug/request_info")
+@app.route("/podsinspace/debug/request_info")
 def debug_request_info():
     """Return headers and environ to help verify forwarded IPs under IIS."""
     from geomap_module.helpers import get_ip

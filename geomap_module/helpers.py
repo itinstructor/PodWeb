@@ -45,7 +45,7 @@ IPGEOLOCATION_API_KEY = _load_api_key()
 # This is the file path to a local database that contains IP address location data.
 # Using a local database is much faster than asking a web service every time.
 # The 'r' before the string means it's a "raw string", which helps with backslashes in Windows paths.
-GEOIP_DB_PATH = r"C:\inetpub\aquaponics\geoip\GeoLite2-City.mmdb"
+GEOIP_DB_PATH = r"C:\inetpub\podsinspace\geoip\GeoLite2-City.mmdb"
 
 # --- Optimization: Initialize the GeoIP database reader once at startup. ---
 # This avoids re-opening the file on every lookup, which is much more efficient.
