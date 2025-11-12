@@ -32,6 +32,9 @@ from geomap_module.models import VisitorLocation
 from geomap_module.helpers import get_ip, get_location
 from geomap_module.routes import VISITOR_COOLDOWN_HOURS
 
+# Cloudflare Turnstile bot protection
+from turnstile import init_turnstile
+
 # ---------------------------------------------------------------------------
 # LOGGING SETUP
 # ---------------------------------------------------------------------------
@@ -151,6 +154,11 @@ with app.app_context():
     except Exception as e:
         logging.exception("Failed to create database tables")
 
+# ---------------------------------------------------------------------------
+# CLOUDFLARE TURNSTILE PROTECTION
+# ---------------------------------------------------------------------------
+# Initialize Turnstile bot protection (automatically protects all routes)
+init_turnstile(app)
 
 # ---------------------------------------------------------------------------
 # VISITOR TRACKING MIDDLEWARE
