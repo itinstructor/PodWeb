@@ -272,11 +272,9 @@ def track_visitor():
 DEFAULT_STREAM_HOST = "10.0.0.6"
 DEFAULT_STREAM_PORT = 8000
 
-# Paths exposed by the Raspberry Pi streaming script:
-#   /stream0.mjpg  -> physical camera index 0 (fish)
-#   /stream1.mjpg  -> physical camera index 2 (plants) mapped by your Pi script
-DEFAULT_STREAM_PATH_0 = "/stream0.mjpg"  # Fish tank
-DEFAULT_STREAM_PATH_1 = "/stream1.mjpg"  # Plant bed
+# Path exposed by the Raspberry Pi streaming script:
+#   /stream0.mjpg  -> physical camera index 0 (active camera)
+DEFAULT_STREAM_PATH_0 = "/stream0.mjpg"
 
 # ---------------------------------------------------------------------------
 # RELAY / STREAMING TUNING
@@ -319,26 +317,21 @@ def get_media_relay(stream_url: str) -> CachedMediaRelay:
 @app.route("/podsinspace", methods=["GET", "POST"])
 def index():
     """
-    Main page. Builds two proxy URLs (one per camera) and passes them
-    to the template. A timestamp param helps defeat browser caching.
+    Main page. Builds a proxy URL for the single active camera stream
+    and passes it to the template. A timestamp param helps defeat
+    browser caching.
     """
     host = DEFAULT_STREAM_HOST
     port = DEFAULT_STREAM_PORT
 
     # Build fish camera proxy URL (still goes through this Flask app)
-    fish_stream_url = url_for(
+    stream_url = url_for(
         "stream_proxy", host=host, port=port, path=DEFAULT_STREAM_PATH_0
-    )
-
-    # Build plant camera proxy URL
-    plants_stream_url = url_for(
-        "stream_proxy", host=host, port=port, path=DEFAULT_STREAM_PATH_1
     )
 
     return render_template(
         "index.html",
-        fish_stream_url=fish_stream_url,
-        plants_stream_url=plants_stream_url,
+        stream_url=stream_url,
         host=host,
         port=port,
         timestamp=int(time.time()),  # basic cache-buster

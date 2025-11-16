@@ -10,5 +10,5 @@ DEFAULT_STREAM_PORT = 8000
 #   /stream0.mjpg  -> physical camera index 0 (Pod)
 #   /stream1.mjpg  -> physical camera index 2 (plants) mapped by your Pi script
 DEFAULT_STREAM_PATH_0 = "/stream0.mjpg"  # Martian POD
-DEFAULT_STREAM_PATH_1 = "/stream1.mjpg"  #
+# Removed secondary stream (previously /stream1.mjpg) now single camera setup
 

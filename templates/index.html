@@ -12,27 +12,16 @@
       Martian soil, including its composition, nutrient availability, and environmental factors.</p>
   </div>
 
-  <!-- Live Camera Streams -->
+  <!-- Live Camera Stream (Full Width, Natural Height) -->
   <div class="card mb-4">
-    <div class="card-header">
-      <h3 class="mb-0">📹 Live PodCam</h3>
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">🐟 PodCast Live Stream</h5>
     </div>
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="card">
-            <div class="card-header bg-primary text-white">
-              <h5 class="mb-0">🐟 Pods In Space</h5>
-            </div>
-            <div class="card-body p-0">
-              <img src="{{ fish_stream_url }}?t={{ timestamp }}" 
-                   alt="Fish Tank Live Stream" 
-                   class="img-fluid w-100"
-                   style="max-height: 400px; object-fit: contain; background-color: #000;">
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="card-body p-0">
+      <img src="{{ stream_url }}?t={{ timestamp }}" 
+           alt="Live Stream"
+           class="img-fluid w-100"
+           style="background:#000;">
     </div>
   </div>
 
