@@ -26,26 +26,30 @@ Usage:
     
     # Middleware automatically protects all routes
 """
+from typing import Dict, Optional
 import os
 import time
 import logging
 import requests
 from functools import wraps
-from flask import request, session, render_template_string, jsonify, redirect, url_for
+from flask import request, session, render_template_string, redirect, url_for
 # --- IP Whitelist for Turnstile bypass ---
 TURNSTILE_IP_WHITELIST = {
     "198.206.239.241",
-    "198.206.239.242",
-    "198.206.239.240",
+    "198.206.239.131",
+    "198.206.239.139",
+    "198.206.239.171",
+    "10.0.1.1"
 }
+
 
 def is_ip_whitelisted():
     ip = request.headers.get("CF-Connecting-IP") or \
-         request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or \
-         request.headers.get("X-Real-IP") or \
-         request.remote_addr or "unknown"
+        request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or \
+        request.headers.get("X-Real-IP") or \
+        request.remote_addr or "unknown"
     return ip in TURNSTILE_IP_WHITELIST
-from typing import Dict, Tuple, Optional
+
 
 # Load environment variables from .env file
 try:
@@ -55,12 +59,14 @@ try:
         load_dotenv(env_path)
         logging.info(f"Loaded environment variables from {env_path}")
 except ImportError:
-    logging.warning("python-dotenv not installed. Using environment variables only.")
+    logging.warning(
+        "python-dotenv not installed. Using environment variables only.")
 
 # Configuration from environment
 TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY", "")
 TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "")
-TURNSTILE_VERIFY_TTL = int(os.environ.get("TURNSTILE_VERIFY_TTL", "3600"))  # 1 hour default
+TURNSTILE_VERIFY_TTL = int(os.environ.get(
+    "TURNSTILE_VERIFY_TTL", "3600"))  # 1 hour default
 TURNSTILE_ENABLED = bool(TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY)
 
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -72,25 +78,26 @@ SESSION_VERIFIED_KEY = "_turnstile_verified_at"
 def validate_turnstile(token: str, secret_key: str, remoteip: Optional[str] = None) -> Dict:
     """
     Validate a Turnstile token with Cloudflare's API.
-    
+
     Returns dict with 'success' boolean and optional 'error-codes' list.
     """
     if not token or not secret_key:
         return {"success": False, "error-codes": ["missing-input"]}
-    
+
     payload = {
         "secret": secret_key,
         "response": token,
     }
     if remoteip:
         payload["remoteip"] = remoteip
-    
+
     try:
         resp = requests.post(TURNSTILE_VERIFY_URL, data=payload, timeout=10)
         if resp.ok:
             return resp.json()
         else:
-            logging.warning(f"Turnstile API returned {resp.status_code}: {resp.text[:200]}")
+            logging.warning(
+                f"Turnstile API returned {resp.status_code}: {resp.text[:200]}")
             return {"success": False, "error-codes": ["api-error"]}
     except Exception as e:
         logging.exception(f"Turnstile validation failed: {e}")
@@ -232,14 +239,16 @@ def init_turnstile(app):
     Adds middleware to check verification on all requests.
     """
     if not TURNSTILE_ENABLED:
-        logging.warning("Turnstile NOT enabled (missing TURNSTILE_SITE_KEY or TURNSTILE_SECRET_KEY)")
+        logging.warning(
+            "Turnstile NOT enabled (missing TURNSTILE_SITE_KEY or TURNSTILE_SECRET_KEY)")
         return
-    
-    logging.info(f"Turnstile enabled with site key: {TURNSTILE_SITE_KEY[:10]}...")
-    
+
+    logging.info(
+        f"Turnstile enabled with site key: {TURNSTILE_SITE_KEY[:10]}...")
+
     # Get the application root for proper URL construction
     app_root = app.config.get('APPLICATION_ROOT', '').rstrip('/')
-    
+
     # Add verification endpoint
     @app.route(f"{app_root}/turnstile/verify", methods=["POST"])
     def turnstile_verify():
@@ -247,16 +256,17 @@ def init_turnstile(app):
         token = request.form.get("cf-turnstile-response")
         next_url = request.form.get("next", "/")
         client_ip = get_client_ip()
-        
+
         validation = validate_turnstile(token, TURNSTILE_SECRET_KEY, client_ip)
-        
+
         if validation.get("success"):
             mark_turnstile_verified()
             logging.info(f"Turnstile verification SUCCESS for {client_ip}")
             return redirect(next_url)
         else:
             errors = validation.get("error-codes", [])
-            logging.warning(f"Turnstile verification FAILED for {client_ip}: {errors}")
+            logging.warning(
+                f"Turnstile verification FAILED for {client_ip}: {errors}")
             # Show challenge again with error
             return render_template_string(
                 CHALLENGE_PAGE,
@@ -265,7 +275,7 @@ def init_turnstile(app):
                 next_url=next_url,
                 error=True
             )
-    
+
     # Add challenge page endpoint
     @app.route(f"{app_root}/turnstile/challenge")
     def turnstile_challenge():
@@ -277,7 +287,7 @@ def init_turnstile(app):
             verify_url=url_for("turnstile_verify"),
             next_url=next_url
         )
-    
+
     # Add middleware to check verification before each request
     @app.before_request
     def check_turnstile_verification():
@@ -287,9 +297,9 @@ def init_turnstile(app):
         """
         if not TURNSTILE_ENABLED:
             return
-        
+
         path = request.path or ""
-        
+
         # Skip verification for these paths
         app_root = app.config.get('APPLICATION_ROOT', '').rstrip('/')
         skip_paths = [
@@ -300,13 +310,14 @@ def init_turnstile(app):
         ]
         if any(path.startswith(p) for p in skip_paths):
             return
-        
+
         # Check if already verified
         if is_turnstile_verified():
             return
-        
+
         # Not verified - redirect to challenge page
-        logging.info(f"Turnstile verification required for {get_client_ip()} accessing {path}")
+        logging.info(
+            f"Turnstile verification required for {get_client_ip()} accessing {path}")
         return redirect(url_for("turnstile_challenge", next=request.url))
 
 
