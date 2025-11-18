@@ -1,6 +1,6 @@
 from .models import BlogPost  # Make sure BlogPost is imported
 from flask import current_app, render_template
-from . import nasa_bp
+from . import blog_bp
 try:
     from sqlalchemy.orm import selectinload
     from database import db  # Fixed: import from database.py to avoid circular import
@@ -32,7 +32,7 @@ def login_required(f):
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
             flash('Please log in to access this page.', 'warning')
-            return redirect(url_for('nasa_bp.login'))
+            return redirect(url_for('blog_bp.login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -42,13 +42,13 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@nasa_bp.route('/')
+@blog_bp.route('/')
 def index():
-    """NASA landing page with links to blog and pictures."""
-    return render_template('nasa_index.html')
+    """Blog landing page with links to blog and pictures."""
+    return render_template('blog_index.html')
 
 
-@nasa_bp.route('/blog')
+@blog_bp.route('/blog')
 def blog():
     """Blog listing page - only show published posts."""
     user = User.query.get(session.get('user_id')
@@ -60,7 +60,7 @@ def blog():
         .order_by(BlogPost.created_at.desc())\
         .all()
     resp = make_response(render_template(
-        'nasa_blog.html', posts=posts, user=user))
+        'blog_blog.html', posts=posts, user=user))
     # Prevent browser/proxy caching so previews reflect latest content
     resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
@@ -68,7 +68,7 @@ def blog():
     return resp
 
 
-@nasa_bp.route('/post/<slug>')
+@blog_bp.route('/post/<slug>')
 def view_post(slug):
     user = User.query.get(session.get('user_id')
                           ) if 'user_id' in session else None
@@ -80,7 +80,7 @@ def view_post(slug):
     # Only allow viewing published posts (unless you're the author)
     if not post.published and (session.get('user_id') != post.author_id):
         flash('This post is not published yet.', 'warning')
-        return redirect(url_for('nasa_bp.blog'))
+        return redirect(url_for('blog_bp.blog'))
 
     # Increment view count
     post.view_count += 1
@@ -90,10 +90,11 @@ def view_post(slug):
         db.session.rollback()
         current_app.logger.error(f"Error updating view count: {e}")
 
-    return render_template('nasa_view_post.html', post=post, user=user)
+    return render_template('blog_view_post.html', post=post, user=user)
 
 
-@nasa_bp.route('/register', methods=['GET', 'POST'])
+## Removed old nasa_bp route decorator
+@blog_bp.route('/register', methods=['GET', 'POST'])
 def register():
     """User registration."""
     if request.method == 'POST':
@@ -107,29 +108,29 @@ def register():
         # Validate CAPTCHA
         if not captcha_user or not captcha_answer:
             flash('Please complete the security check.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         try:
             if int(captcha_user) != int(captcha_answer):
                 flash('Incorrect answer to security question.', 'danger')
-                return render_template('nasa_register.html')
+                return render_template('blog_register.html')
         except ValueError:
             flash('Invalid security answer.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         # Validate input
         if not username or not email or not password:
             flash('All fields are required.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         if password != password_confirm:
             flash('Passwords do not match.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         # Password strength check
         if len(password) < 16:
             flash('Password must be at least 16 characters long.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         complexity_count = 0
         if any(c.isupper() for c in password):
@@ -144,16 +145,16 @@ def register():
         if complexity_count < 3:
             flash(
                 'Password must contain at least 3 of: uppercase, lowercase, number, symbol.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         # Check if user exists
         if User.query.filter_by(username=username).first():
             flash('Username already taken.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
 
         # Create user (unapproved by default)
         hashed_password = generate_password_hash(password)
@@ -169,17 +170,19 @@ def register():
             db.session.commit()
             flash(
                 'Registration successful! Your account is pending admin approval.', 'success')
-            return redirect(url_for('nasa_bp.login'))
+            return redirect(url_for('blog_bp.login'))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Registration error: {e}")
             flash('Registration failed. Please try again.', 'danger')
-            return render_template('nasa_register.html')
+            return render_template('blog_register.html')
+    return render_template('blog_register.html')
 
-    return render_template('nasa_register.html')
+    # removed unreachable old template call
 
 
-@nasa_bp.route('/login', methods=['GET', 'POST'])
+## Removed old nasa_bp route decorator
+@blog_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """User login."""
     if request.method == 'POST':
@@ -189,26 +192,25 @@ def login():
 
         if not username or not password:
             flash('Username and password are required.', 'danger')
-            return render_template('nasa_login.html')
+            return render_template('blog_login.html')
 
         user = User.query.filter_by(username=username).first()
 
         if not user:
-            log_login_attempt(username, client_ip, False, "User not found")
+            log_login_attempt(username, False)
             flash('Invalid username or password.', 'danger')
-            return render_template('nasa_login.html')
+            return render_template('blog_login.html')
 
         # Check if user is approved
         if not user.is_approved:
-            log_login_attempt(username, client_ip, False,
-                              "Account pending approval")
+            log_login_attempt(username, False)
             flash('Your account is pending admin approval.', 'warning')
-            return render_template('nasa_login.html')
+            return render_template('blog_login.html')
 
         if user.is_locked():
             flash(
                 f'Account is locked due to too many failed attempts. Try again after {user.locked_until.strftime("%I:%M %p")}', 'danger')
-            return render_template('nasa_login.html')
+            return render_template('blog_login.html')
 
         if user.check_password(password):
             user.reset_failed_logins()
@@ -217,7 +219,7 @@ def login():
             session['username'] = user.username
             log_login_attempt(username, True)
             flash(f'Welcome back, {user.username}!', 'success')
-            return redirect(url_for('nasa_bp.dashboard'))
+            return redirect(url_for('blog_bp.dashboard'))
         else:
             user.increment_failed_login()
             db.session.commit()
@@ -229,19 +231,20 @@ def login():
             else:
                 flash(
                     'Account locked for 30 minutes due to too many failed attempts.', 'danger')
+    return render_template('blog_login.html')
 
-    return render_template('nasa_login.html')
 
-
-@nasa_bp.route('/logout')
+## Removed old nasa_bp route decorator
+@blog_bp.route('/logout')
 def logout():
     """Log out current user."""
     session.clear()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('nasa_bp.index'))
+    return redirect(url_for('blog_bp.index'))
 
 
-@nasa_bp.route('/dashboard')
+## Removed old nasa_bp route decorator
+@blog_bp.route('/dashboard')
 @login_required
 def dashboard():
     user = User.query.get(session['user_id'])
@@ -249,13 +252,15 @@ def dashboard():
     posts = BlogPost.query.filter_by(
         author_id=session['user_id']
     ).order_by(BlogPost.created_at.desc()).all()
-    return render_template('nasa_dashboard.html', posts=posts, user=user)
+    return render_template('blog_dashboard.html', posts=posts, user=user)
 
 
-@nasa_bp.route('/post/new', methods=['GET', 'POST'])
+## Removed old nasa_bp route decorator
+@blog_bp.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def new_post():
     """Create a new blog post."""
+
     try:
         if request.method == 'POST':
             title = request.form.get('title', '').strip()
@@ -268,7 +273,7 @@ def new_post():
 
             if not title or not content:
                 flash('Title and content are required.', 'danger')
-                return render_template('nasa_edit_post.html', post=None)
+                return render_template('blog_edit_post.html', post=None)
 
             # Generate unique slug
             from slugify import slugify
@@ -281,79 +286,75 @@ def new_post():
 
             logging.info(f"Generated slug: {slug}")
 
-            try:
-                post = BlogPost(
-                    title=title,
-                    slug=slug,
-                    content=content,
-                    excerpt=excerpt[:500] if excerpt else content[:200] + '...',
-                    published=published,
-                    author_id=session['user_id']
-                )
-                db.session.add(post)
-                db.session.flush()  # Get post.id before handling images
+            post = BlogPost(
+                title=title,
+                slug=slug,
+                content=content,
+                excerpt=excerpt[:500] if excerpt else content[:200] + '...',
+                published=published,
+                author_id=session['user_id']
+            )
+            db.session.add(post)
+            db.session.flush()  # Get post.id before handling images
 
-                # Handle image uploads
-                uploaded_files = request.files.getlist('images')
-                for file in uploaded_files:
-                    if file and file.filename and allowed_file(file.filename):
-                        try:
-                            # Check file size
-                            file.seek(0, os.SEEK_END)
-                            file_size = file.tell()
-                            file.seek(0)
+            # Handle image uploads
+            uploaded_files = request.files.getlist('images')
+            for file in uploaded_files:
+                if file and file.filename and allowed_file(file.filename):
+                    try:
+                        # Check file size
+                        file.seek(0, os.SEEK_END)
+                        file_size = file.tell()
+                        file.seek(0)
 
-                            if file_size > MAX_IMAGE_SIZE:
-                                flash(
-                                    f'Image {file.filename} is too large (max 10MB)', 'warning')
-                                continue
-
-                            # Save image
-                            filename, file_path, width, height, saved_size = save_uploaded_image(
-                                file, UPLOAD_FOLDER
-                            )
-
-                            # Create database record
-                            image = BlogImage(
-                                filename=filename,
-                                original_filename=file.filename,
-                                file_path=file_path,
-                                mime_type=file.content_type or 'image/jpeg',
-                                file_size=saved_size,
-                                width=width,
-                                height=height,
-                                post_id=post.id,
-                                uploaded_by=session['user_id']
-                            )
-                            db.session.add(image)
-                            logging.info(f"Image {filename} added to post")
-                        except Exception as e:
-                            logging.exception(
-                                f"Failed to upload image {file.filename}")
+                        if file_size > MAX_IMAGE_SIZE:
                             flash(
-                                f'Failed to upload {file.filename}', 'warning')
+                                f'Image {file.filename} is too large (max 10MB)', 'warning')
+                            continue
 
-                db.session.commit()
-                logging.info(f"Post created successfully with ID: {post.id}")
-                flash('Post created successfully!', 'success')
-                return redirect(url_for('nasa_bp.dashboard'))
-            except Exception as e:
-                logging.exception("Failed to create post in database")
-                db.session.rollback()
-                flash('Failed to create post.', 'danger')
+                        # Save image
+                        filename, file_path, width, height, saved_size = save_uploaded_image(
+                            file, UPLOAD_FOLDER
+                        )
 
-        return render_template('nasa_edit_post.html', post=None)
+                        # Create database record
+                        image = BlogImage(
+                            filename=filename,
+                            original_filename=file.filename,
+                            file_path=file_path,
+                            mime_type=file.content_type or 'image/jpeg',
+                            file_size=saved_size,
+                            width=width,
+                            height=height,
+                            post_id=post.id,
+                            uploaded_by=session['user_id']
+                        )
+                        db.session.add(image)
+                        logging.info(f"Image {filename} added to post")
+                    except Exception as e:
+                        logging.exception(
+                            f"Failed to upload image {file.filename}")
+                        flash(
+                            f'Failed to upload {file.filename}', 'warning')
+
+            db.session.commit()
+            logging.info(f"Post created successfully with ID: {post.id}")
+            flash('Post created successfully!', 'success')
+            return redirect(url_for('blog_bp.dashboard'))
+        return render_template('blog_edit_post.html', post=None)
+
     except Exception as e:
         logging.exception("Error in new_post route")
         import traceback
         return f"<h1>New Post Error</h1><pre>{traceback.format_exc()}</pre>", 500
 
 
-@nasa_bp.route('/post/<slug>/edit', methods=['GET', 'POST'])
+## Removed old nasa_bp route decorator
+@blog_bp.route('/post/<slug>/edit', methods=['GET', 'POST'])
 def edit_post(slug):
     if 'user_id' not in session:
         flash('Please log in to edit posts.', 'danger')
-        return redirect(url_for('nasa_bp.login'))
+        return redirect(url_for('blog_bp.login'))
 
     user = User.query.get(session['user_id'])
     post = BlogPost.query.filter_by(slug=slug).first_or_404()
@@ -361,7 +362,7 @@ def edit_post(slug):
     # Check if user is the author
     if post.author_id != session['user_id']:
         flash('You can only edit your own posts.', 'danger')
-        return redirect(url_for('nasa_bp.dashboard'))
+        return redirect(url_for('blog_bp.dashboard'))
 
     if request.method == 'POST':
         title = request.form.get('title')
@@ -389,16 +390,16 @@ def edit_post(slug):
         try:
             db.session.commit()
             flash('Post updated successfully!', 'success')
-            return redirect(url_for('nasa_bp.view_post', slug=post.slug))
+            return redirect(url_for('blog_bp.view_post', slug=post.slug))
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error updating post: {e}")
             flash('An error occurred while updating the post.', 'danger')
 
-    return render_template('nasa_edit_post.html', post=post, user=user)
+    return render_template('blog_edit_post.html', post=post, user=user)
 
 
-@nasa_bp.route('/post/<int:post_id>/delete', methods=['POST'])
+@blog_bp.route('/post/<int:post_id>/delete', methods=['POST'])
 @login_required
 def delete_post(post_id):
     """Delete a blog post."""
@@ -415,11 +416,10 @@ def delete_post(post_id):
         logging.exception("Failed to delete post")
         db.session.rollback()
         flash('Failed to delete post.', 'danger')
+    return redirect(url_for('blog_bp.dashboard'))
 
-    return redirect(url_for('nasa_bp.dashboard'))
 
-
-@nasa_bp.route('/upload_image', methods=['POST'])
+@blog_bp.route('/upload_image', methods=['POST'])
 @login_required
 def upload_image():
     """
@@ -476,7 +476,7 @@ def upload_image():
         return jsonify({'error': {'message': 'Upload failed'}}), 500
 
 
-@nasa_bp.route('/posts')
+@blog_bp.route('/posts')
 def all_posts():
     """Renders a page with a list of all published posts."""
     try:
@@ -486,15 +486,15 @@ def all_posts():
             .order_by(BlogPost.created_at.desc())\
             .all()
 
-        return render_template('nasa_all_posts.html', posts=posts, title="All Posts")
+        return render_template('blog_all_posts.html', posts=posts, title="All Posts")
     except Exception as e:
         current_app.logger.error(f"Error fetching all posts: {e}")
         flash('Could not retrieve blog posts at this time.', 'danger')
         # Or some other appropriate page
-        return redirect(url_for('nasa_bp.dashboard'))
+        return redirect(url_for('blog_bp.dashboard'))
 
 
-@nasa_bp.route('/pictures')
+@blog_bp.route('/pictures')
 def pictures():
     """Display gallery of all uploaded images from blog posts."""
     try:
@@ -503,21 +503,21 @@ def pictures():
         images = BlogImage.query.options(
             selectinload(BlogImage.post).selectinload(BlogPost.author)
         ).order_by(BlogImage.uploaded_at.desc()).all()
-        return render_template('nasa_pictures.html', images=images, title="Picture Gallery")
+        return render_template('blog_pictures.html', images=images, title="Picture Gallery")
     except Exception as e:
         current_app.logger.error(f"Error fetching pictures: {e}")
         flash('Could not retrieve pictures at this time.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
 
-@nasa_bp.route('/admin')
+@blog_bp.route('/admin')
 @login_required
 def admin():
     """Admin panel for managing users"""
     current_user = User.query.get(session['user_id'])
     if not current_user or not current_user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     # Optimization: Eagerly load posts for each user to get the post count
     # without triggering N+1 queries when calling `user.posts|length` in the template.
@@ -525,82 +525,82 @@ def admin():
         selectinload(User.posts)
     ).order_by(User.created_at.desc()).all()
 
-    return render_template('nasa_admin.html', users=all_users, user=current_user)
+    return render_template('blog_admin.html', users=all_users, user=current_user)
 
 
-@nasa_bp.route('/admin/user/<int:user_id>/approve', methods=['POST'])
+@blog_bp.route('/admin/user/<int:user_id>/approve', methods=['POST'])
 @login_required
 def approve_user(user_id):
     """Approve a user"""
     user = User.query.get(session['user_id'])
     if not user or not user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     target_user = User.query.get_or_404(user_id)
     target_user.is_approved = True
     db.session.commit()
 
     flash(f'User {target_user.username} has been approved.', 'success')
-    return redirect(url_for('nasa_bp.admin'))
+    return redirect(url_for('blog_bp.admin'))
 
 
-@nasa_bp.route('/admin/user/<int:user_id>/toggle_admin', methods=['POST'])
+@blog_bp.route('/admin/user/<int:user_id>/toggle_admin', methods=['POST'])
 @login_required
 def toggle_admin(user_id):
     """Toggle admin status for a user"""
     user = User.query.get(session['user_id'])
     if not user or not user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     target_user = User.query.get_or_404(user_id)
 
     # Prevent removing your own admin status
     if target_user.id == user.id:
         flash('You cannot change your own admin status.', 'warning')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     target_user.is_admin = not target_user.is_admin
     db.session.commit()
 
     status = 'granted' if target_user.is_admin else 'revoked'
     flash(f'Admin privileges {status} for {target_user.username}.', 'success')
-    return redirect(url_for('nasa_bp.admin'))
+    return redirect(url_for('blog_bp.admin'))
 
 
-@nasa_bp.route('/admin/user/<int:user_id>/delete', methods=['POST'])
+@blog_bp.route('/admin/user/<int:user_id>/delete', methods=['POST'])
 @login_required
 def delete_user(user_id):
     """Delete a user"""
     user = User.query.get(session['user_id'])
     if not user or not user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     target_user = User.query.get_or_404(user_id)
 
     # Prevent deleting yourself
     if target_user.id == user.id:
         flash('You cannot delete your own account.', 'warning')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     username = target_user.username
     db.session.delete(target_user)
     db.session.commit()
 
     flash(f'User {username} has been deleted.', 'success')
-    return redirect(url_for('nasa_bp.admin'))
+    return redirect(url_for('blog_bp.admin'))
 
 
-@nasa_bp.route('/admin/user/<int:user_id>/edit', methods=['POST'])
+@blog_bp.route('/admin/user/<int:user_id>/edit', methods=['POST'])
 @login_required
 def edit_user(user_id):
     """Edit user details"""
     user = User.query.get(session['user_id'])
     if not user or not user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     target_user = User.query.get_or_404(user_id)
 
@@ -614,20 +614,20 @@ def edit_user(user_id):
     # Prevent removing admin status from loringw
     if target_user.username == 'loringw' and not is_admin:
         flash('Cannot remove admin status from loringw.', 'warning')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Check if username or email already exists (for other users)
     existing_username = User.query.filter(
         User.username == username, User.id != user_id).first()
     if existing_username:
         flash(f'Username "{username}" is already taken.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     existing_email = User.query.filter(
         User.email == email, User.id != user_id).first()
     if existing_email:
         flash(f'Email "{email}" is already in use.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Update user
     target_user.username = username
@@ -643,18 +643,17 @@ def edit_user(user_id):
         db.session.rollback()
         current_app.logger.error(f"Error updating user: {e}")
         flash('An error occurred while updating the user.', 'danger')
+    return redirect(url_for('blog_bp.admin'))
 
-    return redirect(url_for('nasa_bp.admin'))
 
-
-@nasa_bp.route('/admin/user/<int:user_id>/reset_password', methods=['POST'])
+@blog_bp.route('/admin/user/<int:user_id>/reset_password', methods=['POST'])
 @login_required
 def reset_password(user_id):
     """Reset a user's password"""
     user = User.query.get(session['user_id'])
     if not user or not user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     target_user = User.query.get_or_404(user_id)
 
@@ -664,16 +663,16 @@ def reset_password(user_id):
     # Validate passwords
     if not new_password or not confirm_password:
         flash('Both password fields are required.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     if new_password != confirm_password:
         flash('Passwords do not match.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Password strength check
     if len(new_password) < 16:
         flash('Password must be at least 16 characters long.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     complexity_count = 0
     if any(c.isupper() for c in new_password):
@@ -687,7 +686,7 @@ def reset_password(user_id):
 
     if complexity_count < 3:
         flash('Password must contain at least 3 of: uppercase, lowercase, number, symbol.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Update password
     target_user.password_hash = generate_password_hash(new_password)
@@ -702,18 +701,17 @@ def reset_password(user_id):
         db.session.rollback()
         current_app.logger.error(f"Error resetting password: {e}")
         flash('An error occurred while resetting the password.', 'danger')
+    return redirect(url_for('blog_bp.admin'))
 
-    return redirect(url_for('nasa_bp.admin'))
 
-
-@nasa_bp.route('/admin/user/add', methods=['POST'])
+@blog_bp.route('/admin/user/add', methods=['POST'])
 @login_required
 def add_user():
     """Add a new user from admin panel"""
     user = User.query.get(session['user_id'])
     if not user or not user.is_admin:
         flash('Access denied. Admin privileges required.', 'danger')
-        return redirect(url_for('nasa_bp.index'))
+        return redirect(url_for('blog_bp.index'))
 
     # Get form data
     username = request.form.get('username', '').strip()
@@ -727,16 +725,16 @@ def add_user():
     # Validate input
     if not username or not email or not password:
         flash('Username, email, and password are required.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     if password != confirm_password:
         flash('Passwords do not match.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Password strength check
     if len(password) < 16:
         flash('Password must be at least 16 characters long.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     complexity_count = 0
     if any(c.isupper() for c in password):
@@ -750,16 +748,16 @@ def add_user():
 
     if complexity_count < 3:
         flash('Password must contain at least 3 of: uppercase, lowercase, number, symbol.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Check if user exists
     if User.query.filter_by(username=username).first():
         flash(f'Username "{username}" already exists.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     if User.query.filter_by(email=email).first():
         flash(f'Email "{email}" is already registered.', 'danger')
-        return redirect(url_for('nasa_bp.admin'))
+        return redirect(url_for('blog_bp.admin'))
 
     # Create new user
     new_user = User(
@@ -779,5 +777,4 @@ def add_user():
         db.session.rollback()
         current_app.logger.error(f"Error creating user: {e}")
         flash('An error occurred while creating the user.', 'danger')
-
-    return redirect(url_for('nasa_bp.admin'))
+    return redirect(url_for('blog_bp.admin'))

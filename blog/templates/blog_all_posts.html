@@ -37,7 +37,7 @@
                     {% endif %}
                     
                     <!-- This link assumes your single post view route is named 'view_post' -->
-                    <a href="{{ url_for('nasa_bp.view_post', slug=post.slug) }}" class="btn btn-primary">Read More &rarr;</a>
+                    <a href="{{ url_for('blog_bp.view_post', slug=post.slug) }}" class="btn btn-primary">Read More &rarr;</a>
                 </div>
             </div>
         {% endfor %}

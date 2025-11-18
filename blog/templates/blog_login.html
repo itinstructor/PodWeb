@@ -6,12 +6,12 @@
     <title>Login - NASA Blog</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="{{ url_for('nasa_bp.static', filename='css/blog.css') }}">
+    <link rel="stylesheet" href="{{ url_for('blog_bp.static', filename='css/blog.css') }}">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('nasa_bp.index') }}">
+            <a class="navbar-brand fw-bold" href="{{ url_for('blog_bp.index') }}">
                 🚀 NASA Blog
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -20,16 +20,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('nasa_bp.index') }}">NASA Home</a>
+                        <a class="nav-link" href="{{ url_for('blog_bp.index') }}">Blog Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('nasa_bp.blog') }}">Blog</a>
+                        <a class="nav-link" href="{{ url_for('blog_bp.blog') }}">Blog</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('nasa_bp.pictures') }}">Pictures</a>
+                        <a class="nav-link" href="{{ url_for('blog_bp.pictures') }}">Pictures</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('nasa_bp.login') }}">Login</a>
+                        <a class="nav-link active" href="{{ url_for('blog_bp.login') }}">Login</a>
                     </li>
                 </ul>
             </div>
@@ -65,7 +65,7 @@
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
                             <button type="submit" class="btn btn-primary">Login</button>
-                            <a href="{{ url_for('nasa_bp.register') }}" class="btn btn-link">Create account</a>
+                            <a href="{{ url_for('blog_bp.register') }}" class="btn btn-link">Create account</a>
                         </form>
                     </div>
                 </div>

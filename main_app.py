@@ -136,11 +136,11 @@ app.register_blueprint(geomap_bp, url_prefix="/podsinspace")
 # Register Mars Blog blueprint - KEEP THIS BLOCK, remove the import at top
 logging.info("Attempting to import Mars Blog blueprint...")
 try:
-    from nasa import nasa_bp  # Import here, just before registration
+    from blog import blog_bp  # Import here, just before registration
 
-    logging.info(f"Mars Blog blueprint imported: {nasa_bp}")
-    app.register_blueprint(nasa_bp, url_prefix="/podsinspace/nasa")
-    logging.info("Mars Blog blueprint registered at /podsinspace/nasa")
+    logging.info(f"Blog blueprint imported: {blog_bp}")
+    app.register_blueprint(blog_bp, url_prefix="/podsinspace/blog")
+    logging.info("Blog blueprint registered at /podsinspace/blog")
 except Exception as e:
     logging.exception("Failed to register Mars Blog blueprint")
     logging.error(f"Error details: {str(e)}")
@@ -374,10 +374,11 @@ def stats_page():
     return render_template("waitress_stats.html")
 
 
+
 @app.route("/podsinspace/nasa")
-def nasa():
-    """Render the NASA hub page."""
-    return redirect(url_for("nasa_bp.index"))
+def blog_redirect():
+    """Redirect old NASA blog URL to the main blog listing page."""
+    return redirect(url_for("blog_bp.blog"))
 
 
 # ---------------------------------------------------------------------------
