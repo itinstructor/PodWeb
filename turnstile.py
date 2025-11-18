@@ -32,6 +32,19 @@ import logging
 import requests
 from functools import wraps
 from flask import request, session, render_template_string, jsonify, redirect, url_for
+# --- IP Whitelist for Turnstile bypass ---
+TURNSTILE_IP_WHITELIST = {
+    "198.206.239.241",
+    "198.206.239.242",
+    "198.206.239.240",
+}
+
+def is_ip_whitelisted():
+    ip = request.headers.get("CF-Connecting-IP") or \
+         request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or \
+         request.headers.get("X-Real-IP") or \
+         request.remote_addr or "unknown"
+    return ip in TURNSTILE_IP_WHITELIST
 from typing import Dict, Tuple, Optional
 
 # Load environment variables from .env file
@@ -85,14 +98,14 @@ def validate_turnstile(token: str, secret_key: str, remoteip: Optional[str] = No
 
 
 def is_turnstile_verified() -> bool:
-    """Check if current session has a valid Turnstile verification."""
+    """Check if current session has a valid Turnstile verification or is whitelisted by IP."""
     if not TURNSTILE_ENABLED:
         return True  # If Turnstile not configured, allow all
-    
+    if is_ip_whitelisted():
+        return True
     verified_at = session.get(SESSION_VERIFIED_KEY)
     if not verified_at:
         return False
-    
     # Check if verification has expired
     age = time.time() - verified_at
     return age < TURNSTILE_VERIFY_TTL
