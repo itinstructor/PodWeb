@@ -33,14 +33,14 @@ import logging
 import requests
 from functools import wraps
 from flask import request, session, render_template_string, redirect, url_for
-# --- IP Whitelist for Turnstile bypass ---
-TURNSTILE_IP_WHITELIST = {
-    "198.206.239.241",
-    "198.206.239.131",
-    "198.206.239.139",
-    "198.206.239.171",
-    "10.0.1.1"
-}
+import ipaddress
+
+# ------------- IP Whitelist for Turnstile bypass ------------------ #
+# Populated exclusively from environment variables (no hardcoded defaults).
+TURNSTILE_IP_WHITELIST = set()
+
+# Optional CIDR ranges (populated from environment if provided)
+TURNSTILE_IP_NETWORKS = []  # type: list[ipaddress._BaseNetwork]
 
 
 def is_ip_whitelisted():
@@ -48,10 +48,25 @@ def is_ip_whitelisted():
         request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or \
         request.headers.get("X-Real-IP") or \
         request.remote_addr or "unknown"
-    return ip in TURNSTILE_IP_WHITELIST
+
+    # Exact IP allowlist check
+    if ip in TURNSTILE_IP_WHITELIST:
+        return True
+
+    # CIDR allowlist check
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+        for net in TURNSTILE_IP_NETWORKS:
+            if ip_obj in net:
+                return True
+    except ValueError:
+        # Not a valid IP string; treat as not whitelisted
+        pass
+
+    return False
 
 
-# Load environment variables from .env file
+# --------- Load environment variables from .env file ---------------- #
 try:
     from dotenv import load_dotenv
     env_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -62,7 +77,35 @@ except ImportError:
     logging.warning(
         "python-dotenv not installed. Using environment variables only.")
 
-# Configuration from environment
+# --------------- Optional IP/CIDR allowlist from environment --------- #
+def _parse_ip_allowlist_env(env_value: str):
+    ips = set()
+    nets = []
+    for raw in env_value.split(','):
+        item = raw.strip()
+        if not item:
+            continue
+        try:
+            # CIDR range
+            if '/' in item:
+                nets.append(ipaddress.ip_network(item, strict=False))
+            else:
+                # Normalize IP string
+                ips.add(str(ipaddress.ip_address(item)))
+        except ValueError:
+            logging.warning(f"Invalid IP or CIDR in TURNSTILE_IP_WHITELIST: '{item}'")
+    return ips, nets
+
+# Load IPs/ranges from environment if set.
+_env_ip_list = os.environ.get("TURNSTILE_IP_WHITELIST", "")
+_env_ip_ranges = os.environ.get("TURNSTILE_IP_RANGES", "")
+if _env_ip_list or _env_ip_ranges:
+    env_combined = ",".join([s for s in (_env_ip_list, _env_ip_ranges) if s])
+    _ips, _nets = _parse_ip_allowlist_env(env_combined)
+    TURNSTILE_IP_WHITELIST.update(_ips)
+    TURNSTILE_IP_NETWORKS.extend(_nets)
+
+# --------------- Configuration from environment --------------------- #
 TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY", "")
 TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY", "")
 TURNSTILE_VERIFY_TTL = int(os.environ.get(
