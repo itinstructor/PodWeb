@@ -6,32 +6,20 @@ import logging
 def validate_password(password):
     """
     Validate password meets requirements:
-    - At least 16 characters
-    - At least 3 of 4 categories: uppercase, lowercase, number, symbol
-    
+    - At least 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one number
     Returns: (is_valid: bool, error_message: str)
     """
-    if len(password) < 16:
-        return False, "Password must be at least 16 characters long"
-    
-    categories = 0
-    has_upper = bool(re.search(r'[A-Z]', password))
-    has_lower = bool(re.search(r'[a-z]', password))
-    has_digit = bool(re.search(r'\d', password))
-    has_symbol = bool(re.search(r'[^A-Za-z0-9]', password))
-    
-    if has_upper:
-        categories += 1
-    if has_lower:
-        categories += 1
-    if has_digit:
-        categories += 1
-    if has_symbol:
-        categories += 1
-    
-    if categories < 3:
-        return False, "Password must contain at least 3 of: uppercase, lowercase, number, symbol"
-    
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number"
     return True, ""
 
 
