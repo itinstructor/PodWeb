@@ -321,13 +321,9 @@ def index():
     and passes it to the template. A timestamp param helps defeat
     browser caching.
     """
-    host = DEFAULT_STREAM_HOST
-    port = DEFAULT_STREAM_PORT
-
     # Build fish camera proxy URL (still goes through this Flask app)
-    stream_url = url_for(
-        "stream_proxy", host=host, port=port, path=DEFAULT_STREAM_PATH_0
-    )
+    # No longer passing host/port as query params to hide them from client
+    stream_url = url_for("stream_proxy")
 
     return render_template(
         "index.html",
@@ -394,10 +390,10 @@ def stream_proxy():
       5. Yield frame chunks to the browser in a multipart MJPEG response.
     The browser <img> tag renders the stream continuously.
     """
-    # Get parameters or fall back to defaults
-    host = request.args.get("host", DEFAULT_STREAM_HOST)
-    port = int(request.args.get("port", DEFAULT_STREAM_PORT))
-    path = request.args.get("path", DEFAULT_STREAM_PATH_0)
+    # Use hardcoded defaults (not from query params to hide IP/port from client)
+    host = DEFAULT_STREAM_HOST
+    port = DEFAULT_STREAM_PORT
+    path = DEFAULT_STREAM_PATH_0
 
     # Build complete upstream URL
     stream_url = f"http://{host}:{port}{path}"
