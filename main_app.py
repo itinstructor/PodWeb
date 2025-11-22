@@ -16,9 +16,11 @@ Does NOT include extra debug endpoints or complex UI logic.
 from flask import Flask, render_template, request, url_for, Response, redirect
 import os
 import logging
+import requests
 import logging.handlers
 import threading
 import time
+from urllib.parse import unquote, parse_qsl
 from typing import Dict
 from datetime import datetime, timedelta, timezone
 
@@ -264,6 +266,18 @@ def track_visitor():
         db.session.rollback()
 
 
+@app.after_request
+def set_security_headers(response):
+    """
+    Add security headers to allow cross-origin resources.
+    This fixes COEP blocking issues with Leaflet map markers and other CDN assets.
+    """
+    # Allow cross-origin resources (fixes Leaflet marker images, CDN assets)
+    response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+    response.headers['Cross-Origin-Embedder-Policy'] = 'unsafe-none'
+    return response
+
+
 # ---------------------------------------------------------------------------
 # CAMERA CONFIGURATION
 # ---------------------------------------------------------------------------
@@ -355,6 +369,104 @@ def contact():
 def sensors():
     """Sensor dashboard page (template only here)."""
     return render_template("sensors.html")
+
+
+@app.route("/podsinspace/thingspeak_proxy")
+def thingspeak_proxy():
+    """Proxy Thingspeak resources to avoid Cross-Origin Resource Policy (CORP) blocks.
+
+    Usage: /podsinspace/thingspeak_proxy?path=/channels/12345/widgets/6789 or
+           /podsinspace/thingspeak_proxy?path=/channels/12345/charts/1?....
+    Only forwards requests to thingspeak.com and returns the upstream content.
+    """
+    path = request.args.get("path")
+    client_ip = request.remote_addr or request.environ.get("REMOTE_ADDR")
+    logging.info("Thingspeak proxy request from %s path=%s", client_ip, path)
+
+    if not path:
+        logging.warning("Thingspeak proxy missing 'path' from %s", client_ip)
+        return ("Missing 'path' parameter", 400)
+
+    # Basic safety checks
+    if ".." in path or path.startswith("//"):
+        logging.warning("Thingspeak proxy invalid path from %s: %s", client_ip, path)
+        return ("Invalid path", 400)
+
+    # Decode in case template urlencoded the path (so charts with query strings work)
+    decoded = unquote(path)
+    if "?" in decoded:
+        path_part, query_str = decoded.split("?", 1)
+        params = dict(parse_qsl(query_str, keep_blank_values=True))
+    else:
+        path_part = decoded
+        params = None
+
+    if path_part.startswith("/"):
+        url = f"https://thingspeak.com{path_part}"
+    else:
+        url = f"https://thingspeak.com/{path_part}"
+
+    logging.info("Thingspeak proxy forwarding to %s params=%s (client=%s)", url, params, client_ip)
+
+    try:
+        start = time.time()
+        resp = requests.get(url, params=params, timeout=15)
+        elapsed = time.time() - start
+        logging.info(
+            "Thingspeak responded %s bytes=%d in %.3fs for client %s",
+            resp.status_code,
+            len(resp.content or b""),
+            elapsed,
+            client_ip,
+        )
+    except Exception:
+        logging.exception("Thingspeak proxy request failed for url=%s (client=%s)", url, client_ip)
+        return ("Upstream request failed", 502)
+
+    # Build response while filtering hop-by-hop headers
+    excluded = {
+        "content-encoding",
+        "transfer-encoding",
+        "connection",
+        "keep-alive",
+        "proxy-authenticate",
+        "proxy-authorization",
+        "te",
+        "trailers",
+        "upgrade",
+    }
+
+    response = Response(resp.content, status=resp.status_code)
+    for k, v in resp.headers.items():
+        if k.lower() in excluded:
+            continue
+        # Do not forward content-length (Response will set it)
+        if k.lower() == "content-length":
+            continue
+        response.headers[k] = v
+
+    return response
+
+
+@app.route("/podsinspace/assets/<path:asset_path>")
+def thingspeak_assets_proxy(asset_path):
+    """Proxy Thingspeak assets (JS, CSS, images) that widgets try to load.
+    
+    When widgets are loaded via our proxy, they reference /assets/... paths
+    which need to be forwarded to Thingspeak's CDN.
+    """
+    url = f"https://thingspeak.com/assets/{asset_path}"
+    logging.info("Proxying Thingspeak asset: %s", url)
+    
+    try:
+        resp = requests.get(url, timeout=10)
+        content_type = resp.headers.get('Content-Type', 'application/octet-stream')
+        response = Response(resp.content, status=resp.status_code, mimetype=content_type)
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        return response
+    except Exception:
+        logging.exception("Failed to proxy Thingspeak asset: %s", url)
+        return ("Asset not found", 404)
 
 
 @app.route("/podsinspace/photos")
