@@ -7,11 +7,11 @@ $ErrorActionPreference = "Stop"
 $dbPath = "C:\inetpub\podsinspace\instance\nasa_blog.db"
 $backupDir = "C:\inetpub\podsinspace\backups"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HHmmss"
-$backupFileName = "nasa_blog_$timestamp.db"
+$backupFileName = "nasa_blog_$timestamp.bak"
 $backupPath = Join-Path $backupDir $backupFileName
 
-# Keep only the last 30 days of backups
-$daysToKeep = 30
+# Keep only the last 14 days of backups
+$daysToKeep = 14
 
 try {
     # Create backup directory if it doesn't exist

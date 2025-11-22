@@ -15,8 +15,11 @@
 
   <!-- Live Camera Stream (Full Width, Natural Height) -->
   <div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-      <h5 class="mb-0">🐟 PodCast Live Stream</h5>
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">🦗 PodCast Live Stream</h5>
+      <a href="{{ stream_url }}" target="_blank" class="btn btn-light btn-sm">
+        <i class="bi bi-arrows-fullscreen"></i> Full Screen
+      </a>
     </div>
     <div class="card-body p-0">
       <img src="{{ stream_url }}?t={{ timestamp }}" alt="Live Stream" class="img-fluid w-100" style="background:#000;">

@@ -332,8 +332,6 @@ def index():
     return render_template(
         "index.html",
         stream_url=stream_url,
-        host=host,
-        port=port,
         timestamp=int(time.time()),  # basic cache-buster
     )
 
