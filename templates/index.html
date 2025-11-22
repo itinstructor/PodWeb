@@ -5,10 +5,11 @@
   <div class="mb-4">
     <h1 class="mb-2">🪲 Pods In Space - A NASA Martian Soil Experiment</h1>
     <p>A NASA Closed Ecosystem Experiment by Sarah J Trook. </p>
-      <p>The project aims to explore the feasibility of sustaining
+    <p>The project aims to explore the feasibility of sustaining
       plant life in Martian soil conditions using a closed
       ecosystem.
-      The experiment focuses on understanding how different plant species, isopods, and springtails adapt to the unique challenges posed by
+      The experiment focuses on understanding how different plant species, isopods, and springtails adapt to the unique
+      challenges posed by
       Martian soil, including its composition, nutrient availability, and environmental factors.</p>
   </div>
 
@@ -18,24 +19,26 @@
       <h5 class="mb-0">🐟 PodCast Live Stream</h5>
     </div>
     <div class="card-body p-0">
-      <img src="{{ stream_url }}?t={{ timestamp }}" 
-           alt="Live Stream"
-           class="img-fluid w-100"
-           style="background:#000;">
+      <img src="{{ stream_url }}?t={{ timestamp }}" alt="Live Stream" class="img-fluid w-100" style="background:#000;">
     </div>
   </div>
 
   <!-- Ambient Conditions Card -->
   <div class="card mb-4">
     <div class="card-header">
-      <h3 class="mb-0">🌿 Cougar Spotlight for November</h3>
+      <h3 class="mb-0">🌿 WNCC Cougar Spotlight for November</h3>
     </div>
-
-    <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/XBtiUPdrNN8?si=TbnlLpq2Pn5otNYi"
-      title="YouTube video player" frameborder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
+    <div class="card-body text-center">
+      <a href="https://www.youtube.com/watch?v=XBtiUPdrNN8" target="_blank" class="text-decoration-none">
+        <img src="https://img.youtube.com/vi/XBtiUPdrNN8/maxresdefault.jpg" alt="WNCC Cougar Spotlight"
+          class="img-fluid rounded shadow-sm mb-3" style="max-width: 640px;">
+        <div>
+          <button class="btn btn-danger btn-lg">
+            <i class="bi bi-youtube"></i> Watch on YouTube
+          </button>
+        </div>
+      </a>
+    </div>
 
     <div class="row g-4">
       <div class="col-md-6">
@@ -68,4 +71,4 @@
 
 
 
-  {% endblock %}
+{% endblock %}
