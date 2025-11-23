@@ -778,3 +778,10 @@ def add_user():
         current_app.logger.error(f"Error creating user: {e}")
         flash('An error occurred while creating the user.', 'danger')
     return redirect(url_for('blog_bp.admin'))
+
+
+@blog_bp.route('/photos')
+def photos_gallery():
+    """Photo gallery page (blog version)."""
+    # In the future, fetch photos from DB. For now, just render the template.
+    return render_template('photos.html')

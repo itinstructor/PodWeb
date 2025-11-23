@@ -116,21 +116,23 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 import os
 
 SECRET_KEY_FILE = os.path.join(os.path.dirname(__file__), "secret_key.txt")
+logging.info(f"SECRET_KEY_FILE path being checked: {SECRET_KEY_FILE}")
 
 if os.path.exists(SECRET_KEY_FILE):
     with open(SECRET_KEY_FILE, "r") as f:
         app.config["SECRET_KEY"] = f.read().strip()
     logging.info("Secret key loaded from file")
+    logging.info(f"Secret key configured: {app.config['SECRET_KEY'][:10]}...")
 else:
     logging.error("secret_key.txt not found! Run generate_secret_key.py first")
     raise RuntimeError(
         "Secret key file missing. Run generate_secret_key.py to create it."
     )
-
-logging.info(f"Secret key configured: {app.config['SECRET_KEY'][:10]}...")
+logging.info(f"SECRET_KEY_FILE path being checked: {SECRET_KEY_FILE}")
 
 # Initialize the database with this app (don't create a new SQLAlchemy instance)
 db.init_app(app)
+
 
 # Register the geomap blueprint for visitor tracking
 app.register_blueprint(geomap_bp, url_prefix="/podsinspace")
