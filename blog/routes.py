@@ -1,13 +1,4 @@
-from .models import BlogPost, Photo  # Make sure BlogPost and Photo are imported
-from flask import current_app, render_template
-from . import blog_bp
-try:
-    from sqlalchemy.orm import selectinload
-    from database import db  # Fixed: import from database.py to avoid circular import
-except Exception:
-    db = None  # fallback if not needed in this module path
-
-# ...existing code...
+from flask import send_from_directory
 from .models import BlogPost, Photo  # Make sure BlogPost and Photo are imported
 from flask import current_app, render_template
 from . import blog_bp
@@ -28,8 +19,6 @@ import os
 import secrets
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
-import glob
-
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 UPLOAD_FOLDER = os.path.join(os.path.dirname(
@@ -104,7 +93,7 @@ def view_post(slug):
     return render_template('blog_view_post.html', post=post, user=user)
 
 
-## Removed old nasa_bp route decorator
+# Removed old nasa_bp route decorator
 @blog_bp.route('/register', methods=['GET', 'POST'])
 def register():
     """User registration."""
@@ -140,7 +129,7 @@ def register():
 
         # Password strength check
         if len(password) < 16:
-            flash('Password must be at least 16 characters long.', 'danger')
+            flash('Password must be at least 12 characters long.', 'danger')
             return render_template('blog_register.html')
 
         complexity_count = 0
@@ -189,10 +178,7 @@ def register():
             return render_template('blog_register.html')
     return render_template('blog_register.html')
 
-    # removed unreachable old template call
 
-
-## Removed old nasa_bp route decorator
 @blog_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """User login."""
@@ -245,28 +231,25 @@ def login():
     return render_template('blog_login.html')
 
 
-## Removed old nasa_bp route decorator
 @blog_bp.route('/logout')
 def logout():
     """Log out current user."""
     session.clear()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('blog_bp.index'))
+    # After logout, return to the blog listing so the application context remains correct
+    return redirect(url_for('blog_bp.blog'))
 
 
-## Removed old nasa_bp route decorator
 @blog_bp.route('/dashboard')
 @login_required
 def dashboard():
     user = User.query.get(session['user_id'])
-    # No need for selectinload here since we know the author is the current user.
     posts = BlogPost.query.filter_by(
         author_id=session['user_id']
     ).order_by(BlogPost.created_at.desc()).all()
     return render_template('blog_dashboard.html', posts=posts, user=user)
 
 
-## Removed old nasa_bp route decorator
 @blog_bp.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def new_post():
@@ -360,7 +343,6 @@ def new_post():
         return f"<h1>New Post Error</h1><pre>{traceback.format_exc()}</pre>", 500
 
 
-## Removed old nasa_bp route decorator
 @blog_bp.route('/post/<slug>/edit', methods=['GET', 'POST'])
 def edit_post(slug):
     if 'user_id' not in session:
@@ -507,7 +489,8 @@ def all_posts():
 
 @blog_bp.route('/photos/<path:filename>')
 def serve_photo(filename):
-    photos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'photos')
+    photos_dir = os.path.join(os.path.dirname(
+        os.path.dirname(__file__)), 'photos')
     return send_from_directory(photos_dir, filename)
 
 
@@ -866,12 +849,10 @@ def upload_photo():
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         file.save(save_path)
         # Save metadata to DB
-        photo = Photo(filename=filename, caption=caption, description=description)
+        photo = Photo(filename=filename, caption=caption,
+                      description=description)
         db.session.add(photo)
         db.session.commit()
         flash('Photo uploaded successfully!', 'success')
         return redirect(url_for('blog_bp.upload_photo'))
     return render_template('blog_upload_photo.html')
-
-
-from flask import send_from_directory
