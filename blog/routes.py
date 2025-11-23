@@ -1,4 +1,4 @@
-from .models import BlogPost  # Make sure BlogPost is imported
+from .models import BlogPost, Photo  # Make sure BlogPost and Photo are imported
 from flask import current_app, render_template
 from . import blog_bp
 try:
@@ -18,6 +18,7 @@ import os
 import secrets
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
+import glob
 
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -494,20 +495,28 @@ def all_posts():
         return redirect(url_for('blog_bp.dashboard'))
 
 
-@blog_bp.route('/pictures')
-def pictures():
-    """Display gallery of all uploaded images from blog posts."""
-    try:
-        # Get all images ordered by upload date (newest first)
-        # Optimization: Eagerly load related post and author to avoid N+1 queries in the gallery.
-        images = BlogImage.query.options(
-            selectinload(BlogImage.post).selectinload(BlogPost.author)
-        ).order_by(BlogImage.uploaded_at.desc()).all()
-        return render_template('blog_pictures.html', images=images, title="Picture Gallery")
-    except Exception as e:
-        current_app.logger.error(f"Error fetching pictures: {e}")
-        flash('Could not retrieve pictures at this time.', 'danger')
-        return redirect(url_for('blog_bp.index'))
+@blog_bp.route('/photos/<path:filename>')
+def serve_photo(filename):
+    photos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'photos')
+    return send_from_directory(photos_dir, filename)
+
+
+@blog_bp.route('/photos')
+def photos_gallery():
+    """Photo gallery page (blog version)."""
+    photos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'photos')
+    image_files = []
+    for ext in ('*.jpg', '*.jpeg', '*.png', '*.gif', '*.webp', '*.JPG', '*.PNG'):
+        image_files.extend(glob.glob(os.path.join(photos_dir, ext)))
+    image_files = [os.path.basename(f) for f in image_files]
+    image_files.sort()
+    # Build a list of dicts with filename and caption from DB if available
+    photos = []
+    for fname in image_files:
+        photo_obj = Photo.query.filter_by(filename=fname).first()
+        caption = photo_obj.caption if photo_obj and photo_obj.caption else ''
+        photos.append({'filename': fname, 'caption': caption})
+    return render_template('photos.html', photos=photos)
 
 
 @blog_bp.route('/admin')
@@ -780,8 +789,32 @@ def add_user():
     return redirect(url_for('blog_bp.admin'))
 
 
-@blog_bp.route('/photos')
-def photos_gallery():
-    """Photo gallery page (blog version)."""
-    # In the future, fetch photos from DB. For now, just render the template.
-    return render_template('photos.html')
+@blog_bp.route('/photos/upload', methods=['GET', 'POST'])
+@login_required
+def upload_photo():
+    """Upload a new photo."""
+    if request.method == 'POST':
+        file = request.files.get('photo')
+        caption = request.form.get('caption', '').strip()
+        description = request.form.get('description', '').strip()
+        if not file or file.filename == '':
+            flash('No file selected.', 'danger')
+            return redirect(request.url)
+        if not allowed_file(file.filename):
+            flash('Invalid file type.', 'danger')
+            return redirect(request.url)
+        filename = secure_filename(file.filename)
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
+        # Ensure upload folder exists
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        file.save(save_path)
+        # Save metadata to DB
+        photo = Photo(filename=filename, caption=caption, description=description)
+        db.session.add(photo)
+        db.session.commit()
+        flash('Photo uploaded successfully!', 'success')
+        return redirect(url_for('blog_bp.upload_photo'))
+    return render_template('blog_upload_photo.html')
+
+
+from flask import send_from_directory

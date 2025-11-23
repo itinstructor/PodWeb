@@ -102,3 +102,18 @@ class LoginAttempt(db.Model):
         return f'<LoginAttempt {self.username} @ {self.timestamp}>'
 
 
+class Photo(db.Model):
+    """Model for gallery photos."""
+    __tablename__ = 'photo'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    caption = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    upload_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    # Optionally, add a user_id if you want to track who uploaded
+
+    def __repr__(self):
+        return f'<Photo {self.filename}>'
+
+

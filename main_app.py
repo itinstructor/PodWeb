@@ -143,8 +143,8 @@ try:
     from blog import blog_bp  # Import here, just before registration
 
     logging.info(f"Blog blueprint imported: {blog_bp}")
-    app.register_blueprint(blog_bp, url_prefix="/podsinspace/blog")
-    logging.info("Blog blueprint registered at /podsinspace/blog")
+    app.register_blueprint(blog_bp, url_prefix="/podsinspace")
+    logging.info("Blog blueprint registered at /podsinspace")
 except Exception as e:
     logging.exception("Failed to register Mars Blog blueprint")
     logging.error(f"Error details: {str(e)}")
@@ -471,10 +471,7 @@ def thingspeak_assets_proxy(asset_path):
         return ("Asset not found", 404)
 
 
-@app.route("/podsinspace/photos")
-def photos():
-    """Photo gallery page."""
-    return render_template("photos.html")
+
 
 @app.route("/podsinspace/stats")
 def stats_page():

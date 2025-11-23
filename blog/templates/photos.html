@@ -3,5 +3,24 @@
 {% block title %}Photo Gallery{% endblock %}
 
 {% block content %}
-<!-- ...existing code from photos.html... -->
+<div class="container mt-4">
+    <h2 class="mb-4">Photo Gallery</h2>
+    <div class="row">
+        {% for photo in photos %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card h-100">
+                <img src="{{ url_for('blog_bp.serve_photo', filename=photo.filename) }}" class="card-img-top" alt="{{ photo.filename }}">
+                <div class="card-body">
+                    <p class="card-text small text-muted">{{ photo.caption or photo.filename }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% if photos|length == 0 %}
+        <div class="col-12">
+            <p class="text-muted">No photos found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
