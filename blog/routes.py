@@ -504,19 +504,10 @@ def serve_photo(filename):
 @blog_bp.route('/photos')
 def photos_gallery():
     """Photo gallery page (blog version)."""
-    photos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'photos')
-    image_files = []
-    for ext in ('*.jpg', '*.jpeg', '*.png', '*.gif', '*.webp', '*.JPG', '*.PNG'):
-        image_files.extend(glob.glob(os.path.join(photos_dir, ext)))
-    image_files = [os.path.basename(f) for f in image_files]
-    image_files.sort()
-    # Build a list of dicts with filename and caption from DB if available
-    photos = []
-    for fname in image_files:
-        photo_obj = Photo.query.filter_by(filename=fname).first()
-        caption = photo_obj.caption if photo_obj and photo_obj.caption else ''
-        photos.append({'filename': fname, 'caption': caption})
-    return render_template('photos.html', photos=photos)
+    photos = Photo.query.order_by(Photo.filename).all()
+    # Build a list of dicts for template compatibility
+    photos_list = [{'filename': p.filename, 'caption': p.caption or ''} for p in photos]
+    return render_template('photos.html', photos=photos_list)
 
 
 @blog_bp.route('/admin')
