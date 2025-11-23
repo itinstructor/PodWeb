@@ -110,6 +110,8 @@ class Photo(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     caption = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
+    # Integer position for manual ordering in the gallery. Lower numbers display first.
+    position = db.Column(db.Integer, nullable=False, default=0, index=True)
     upload_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     # Optionally, add a user_id if you want to track who uploaded
 

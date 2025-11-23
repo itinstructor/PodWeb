@@ -7,6 +7,16 @@ try:
 except Exception:
     db = None  # fallback if not needed in this module path
 
+# ...existing code...
+from .models import BlogPost, Photo  # Make sure BlogPost and Photo are imported
+from flask import current_app, render_template
+from . import blog_bp
+try:
+    from sqlalchemy.orm import selectinload
+    from database import db  # Fixed: import from database.py to avoid circular import
+except Exception:
+    db = None  # fallback if not needed in this module path
+
 from flask import render_template, request, redirect, url_for, flash, session, abort, jsonify, current_app, make_response
 from .models import User, BlogPost, BlogImage, LoginAttempt
 from .auth import validate_password, get_client_ip, log_login_attempt
@@ -503,11 +513,67 @@ def serve_photo(filename):
 
 @blog_bp.route('/photos')
 def photos_gallery():
-    """Photo gallery page (blog version)."""
-    photos = Photo.query.order_by(Photo.filename).all()
-    # Build a list of dicts for template compatibility
-    photos_list = [{'filename': p.filename, 'caption': p.caption or ''} for p in photos]
+    """Photo gallery page (blog version). Supports manual ordering via `position`."""
+    # Order first by position (manual), then filename as fallback
+    photos = Photo.query.order_by(Photo.position.asc(), Photo.filename).all()
+    # Build a list of dicts for template compatibility, including id, position, and description
+    photos_list = [
+        {
+            'id': p.id,
+            'filename': p.filename,
+            'caption': p.caption or '',
+            'description': p.description or '',
+            'position': p.position,
+        }
+        for p in photos
+    ]
     return render_template('photos.html', photos=photos_list)
+
+
+@blog_bp.route('/photos/<int:photo_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_photo(photo_id):
+    """Edit photo metadata (caption, description)."""
+    photo = Photo.query.get_or_404(photo_id)
+    if request.method == 'POST':
+        caption = request.form.get('caption', '').strip()
+        description = request.form.get('description', '').strip()
+        photo.caption = caption
+        photo.description = description
+        try:
+            db.session.commit()
+            flash('Photo metadata updated.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error updating photo metadata: {e}")
+            flash('Could not update photo metadata.', 'danger')
+        return redirect(url_for('blog_bp.photos_gallery'))
+    return render_template('edit_photo.html', photo=photo)
+
+
+@blog_bp.route('/photos/reorder', methods=['POST'])
+@login_required
+def reorder_photos():
+    """Accept JSON payload with new order: {"order": [id1, id2, ...]} and update positions."""
+    data = request.get_json(silent=True)
+    if not data or 'order' not in data:
+        return jsonify({'error': 'Missing order data'}), 400
+    try:
+        order = data['order']
+        # Validate it's a list of ints
+        if not isinstance(order, list):
+            raise ValueError('Order must be a list')
+        # Update positions in a transaction
+        for idx, pid in enumerate(order):
+            photo = Photo.query.get(pid)
+            if photo:
+                photo.position = idx
+        db.session.commit()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error reordering photos: {e}")
+        return jsonify({'error': 'Could not save order'}), 500
 
 
 @blog_bp.route('/admin')
