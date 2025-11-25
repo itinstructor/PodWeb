@@ -513,6 +513,20 @@ def photos_gallery():
     return render_template('photos.html', photos=photos_list)
 
 
+@blog_bp.route('/videos')
+def videos():
+    """Videos listing page."""
+    # Example static list; can be replaced with DB-driven list later.
+    videos = [
+        {
+            'id': 'iYXiKHRuhz4',
+            'title': 'Pods In Space — Project Overview',
+            'description': 'Introductory video for the Pods In Space project.'
+        },
+    ]
+    return render_template('videos.html', videos=videos)
+
+
 @blog_bp.route('/photos/<int:photo_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_photo(photo_id):
