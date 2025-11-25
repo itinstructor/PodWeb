@@ -51,21 +51,10 @@ handler = logging.handlers.TimedRotatingFileHandler(
 )
 handler.suffix = "%Y-%m-%d.log"  # Keep .log extension in rotated files
 
-try:
-    from zoneinfo import ZoneInfo
 
-    MOUNTAIN_TZ = ZoneInfo("America/Denver")
-except ImportError:
-    try:
-        from backports.zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo
 
-        MOUNTAIN_TZ = ZoneInfo("America/Denver")
-    except ImportError:
-        from datetime import timezone, timedelta
-
-        MOUNTAIN_TZ = timezone(timedelta(hours=-6))
-        logging.warning("zoneinfo not available, using fixed UTC-6 offset")
-
+MOUNTAIN_TZ = ZoneInfo("America/Denver")
 
 class MountainFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
@@ -359,13 +348,6 @@ def champions():
 def about():
     """Static About page."""
     return render_template("about.html")
-
-
-@app.route("/podsinspace/contact")
-def contact():
-    """Static Contact page."""
-    return render_template("contact.html")
-
 
 @app.route("/podsinspace/sensors")
 def sensors():
