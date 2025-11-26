@@ -137,6 +137,13 @@ try:
 except Exception as e:
     logging.exception("Failed to register Mars Blog blueprint")
     logging.error(f"Error details: {str(e)}")
+    
+# Import Post model for the index page query
+try:
+    from blog.models import BlogPost
+    logging.info("Successfully imported BlogPost model for index page.")
+except ImportError:
+    BlogPost = None # Set to None if import fails, so app doesn't crash
 
 # Create database tables if they don't exist
 # Initialize database tables for all modules
@@ -330,10 +337,20 @@ def index():
     # No longer passing host/port as query params to hide them from client
     stream_url = url_for("stream_proxy")
 
+    # Query for the latest blog posts to display on the homepage
+    latest_posts = []
+    if BlogPost:
+        try:
+            latest_posts = BlogPost.query.filter_by(published=True).order_by(BlogPost.created_at.desc()).limit(2).all()
+            logging.info(f"Found {len(latest_posts)} posts for the homepage.")
+        except Exception as e:
+            logging.error(f"Error querying for latest posts: {e}")
+
     return render_template(
         "index.html",
         stream_url=stream_url,
         timestamp=int(time.time()),  # basic cache-buster
+        latest_sarah_posts=latest_posts # Pass the posts to the template
     )
 
 

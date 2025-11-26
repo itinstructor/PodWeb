@@ -44,8 +44,16 @@ def allowed_file(filename):
 
 @blog_bp.route('/')
 def index():
-    """Blog landing page with links to blog and pictures."""
-    return render_template('blog_index.html')
+    """Main homepage with latest Sarah T blog posts."""
+    user = User.query.filter(User.username.ilike('sarah t')).first()
+    posts = []
+    if user:
+        posts = BlogPost.query.filter_by(author_id=user.id, published=True).order_by(BlogPost.created_at.desc()).limit(2).all()
+    # Provide stream_url and timestamp for camera if needed
+    from datetime import datetime
+    stream_url = '/static/stream.jpg'  # Adjust as needed
+    timestamp = int(datetime.utcnow().timestamp())
+    return render_template('index.html', latest_sarah_posts=posts, stream_url=stream_url, timestamp=timestamp)
 
 
 @blog_bp.route('/blog')

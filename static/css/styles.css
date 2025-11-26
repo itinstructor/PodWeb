@@ -112,7 +112,21 @@ a:hover {
     background-color: rgba(255, 255, 255, 0.05);  /* Light transparent background */
     color: white;                                   /* White text */
 }
+.btn-primary {
+    background-color: #e94560;
+    border-color: #e94560;
+}
 
+.btn-primary:hover {
+    background-color: #d63447;
+    border-color: #d63447;
+}
+
+/* Off-white color for muted text */
+.text-muted,
+.post-meta {
+    color: #b0b0b0 !important;
+}
 
 /* =============================================================================
    VIDEO STREAMING STYLES - For the camera feed display

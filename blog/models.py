@@ -11,6 +11,7 @@ from werkzeug.security import check_password_hash
 class User(db.Model):
     """User model for NASA blog authentication."""
     __tablename__ = 'user'
+    __bind_key__ = None  # Use the default database connection
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -54,6 +55,7 @@ class User(db.Model):
 class BlogPost(db.Model):
     """Blog post model."""
     __tablename__ = 'blog_post'
+    __bind_key__ = None  # Use the default database connection
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -76,6 +78,7 @@ class BlogPost(db.Model):
 class BlogImage(db.Model):
     """Model for blog post images."""
     __tablename__ = 'blog_image'
+    __bind_key__ = None  # Use the default database connection
     
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
@@ -90,6 +93,7 @@ class BlogImage(db.Model):
 class LoginAttempt(db.Model):
     """Model to log login attempts for security monitoring."""
     __tablename__ = 'login_attempt'
+    __bind_key__ = None  # Use the default database connection
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), nullable=False)
@@ -105,6 +109,7 @@ class LoginAttempt(db.Model):
 class Photo(db.Model):
     """Model for gallery photos."""
     __tablename__ = 'photo'
+    __bind_key__ = None  # Use the default database connection
     
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
@@ -117,5 +122,3 @@ class Photo(db.Model):
 
     def __repr__(self):
         return f'<Photo {self.filename}>'
-
-
