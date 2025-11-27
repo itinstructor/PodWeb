@@ -538,21 +538,37 @@ def videos():
 @blog_bp.route('/photos/<int:photo_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_photo(photo_id):
-    """Edit photo metadata (caption, description)."""
+    """Edit photo metadata (caption, description) and allow delete."""
     photo = Photo.query.get_or_404(photo_id)
     if request.method == 'POST':
-        caption = request.form.get('caption', '').strip()
-        description = request.form.get('description', '').strip()
-        photo.caption = caption
-        photo.description = description
-        try:
-            db.session.commit()
-            flash('Photo metadata updated.', 'success')
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error updating photo metadata: {e}")
-            flash('Could not update photo metadata.', 'danger')
-        return redirect(url_for('blog_bp.photos_gallery'))
+        if 'delete' in request.form:
+            # Delete photo file from ./photos and remove from DB
+            try:
+                photos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'photos')
+                file_path = os.path.join(photos_dir, photo.filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                db.session.delete(photo)
+                db.session.commit()
+                flash('Photo deleted successfully.', 'success')
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error deleting photo: {e}")
+                flash('Could not delete photo.', 'danger')
+            return redirect(url_for('blog_bp.photos_gallery'))
+        else:
+            caption = request.form.get('caption', '').strip()
+            description = request.form.get('description', '').strip()
+            photo.caption = caption
+            photo.description = description
+            try:
+                db.session.commit()
+                flash('Photo metadata updated.', 'success')
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error updating photo metadata: {e}")
+                flash('Could not update photo metadata.', 'danger')
+            return redirect(url_for('blog_bp.photos_gallery'))
     return render_template('edit_photo.html', photo=photo)
 
 
@@ -854,7 +870,10 @@ def add_user():
 @blog_bp.route('/photos/upload', methods=['GET', 'POST'])
 @login_required
 def upload_photo():
-    """Upload a new photo."""
+    """Upload a new photo (only for logged-in users)."""
+    if 'user_id' not in session:
+        flash('Please log in to upload photos.', 'warning')
+        return redirect(url_for('blog_bp.login'))
     if request.method == 'POST':
         file = request.files.get('photo')
         caption = request.form.get('caption', '').strip()
@@ -866,15 +885,14 @@ def upload_photo():
             flash('Invalid file type.', 'danger')
             return redirect(request.url)
         filename = secure_filename(file.filename)
-        save_path = os.path.join(UPLOAD_FOLDER, filename)
-        # Ensure upload folder exists
-        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        photos_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'photos')
+        os.makedirs(photos_dir, exist_ok=True)
+        save_path = os.path.join(photos_dir, filename)
         file.save(save_path)
         # Save metadata to DB
-        photo = Photo(filename=filename, caption=caption,
-                      description=description)
+        photo = Photo(filename=filename, caption=caption, description=description)
         db.session.add(photo)
         db.session.commit()
         flash('Photo uploaded successfully!', 'success')
-        return redirect(url_for('blog_bp.upload_photo'))
+        return redirect(url_for('blog_bp.photos_gallery'))
     return render_template('blog_upload_photo.html')

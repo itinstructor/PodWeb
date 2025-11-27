@@ -5,7 +5,7 @@ import logging
 
 def validate_password(password):
     """
-    Validate password meets requirements:
+    Validate password meets requirements of 3 out of 4:
     - At least 8 characters
     - At least one uppercase letter
     - At least one lowercase letter
