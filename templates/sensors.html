@@ -108,9 +108,13 @@
                         const data = await response.json();
 
                         if (data) {
-                            document.getElementById('field1').textContent = data.field1 ? parseFloat(data.field1).toFixed(1) : '--';
+                            // CO2
+                            document.getElementById('field1').textContent = data.field1 ? parseFloat(data.field1).toFixed(0) : '--';
+                            // Temperature
                             document.getElementById('field2').textContent = data.field2 ? parseFloat(data.field2).toFixed(1) : '--';
-                            document.getElementById('field3').textContent = data.field3 ? parseFloat(data.field3).toFixed(2) : '--';
+                            // Humidity
+                            document.getElementById('field3').textContent = data.field3 ? parseFloat(data.field3).toFixed(0) : '--';
+                            // Soil Moisture
                             document.getElementById('field4').textContent = data.field4 ? parseFloat(data.field4).toFixed(1) : '--';
                         }
                     } catch (error) {
