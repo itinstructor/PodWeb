@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.12.0/baguetteBox.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.13.0/baguetteBox.min.css">
 
 <div class="container py-4">
     <div class="card mb-4">
@@ -61,7 +61,7 @@
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.12.0/baguetteBox.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/baguettebox.js/1.15.6/baguetteBox.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         baguetteBox.run('.gallery', {
@@ -73,7 +73,7 @@
     });
 </script>
 <!-- Reorder support for logged-in users using SortableJS -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 {% if session['user_id'] is defined %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
