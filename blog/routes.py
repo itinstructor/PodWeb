@@ -44,7 +44,7 @@ def allowed_file(filename):
 
 @blog_bp.route('/')
 def index():
-    """Main homepage with latest Sarah T blog posts."""
+    """Main homepage with latest blog posts."""
     user = User.query.filter(User.username.ilike('sarah t')).first()
     posts = []
     if user:
