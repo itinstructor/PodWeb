@@ -344,12 +344,15 @@ def init_turnstile(app):
         path = request.path or ""
 
         # Skip verification for these paths
-        app_root = app.config.get('APPLICATION_ROOT', '').rstrip('/')
+        # Use /podsinspace as prefix since that's where the app is mounted
+        app_root = app.config.get('APPLICATION_ROOT', '/podsinspace').rstrip('/')
         skip_paths = [
             f"{app_root}/turnstile/",
             f"{app_root}/static/",
             f"{app_root}/health",
             f"{app_root}/server_info",
+            f"{app_root}/api/",  # Allow API endpoints for AJAX calls
+            "/podsinspace/api/",  # Explicit fallback for API routes
         ]
         if any(path.startswith(p) for p in skip_paths):
             return

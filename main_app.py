@@ -83,7 +83,8 @@ app = Flask(__name__,
            static_folder='static',
            static_url_path='/podsinspace/static')
 
-app.config['APPLICATION_ROOT'] = '/podsinspace'
+# Note: APPLICATION_ROOT is NOT set because blueprints already use url_prefix="/podsinspace"
+# Setting APPLICATION_ROOT would cause url_for() to double the prefix
 # ---------------------------------------------------------------------------
 # DATABASE SETUP
 # ---------------------------------------------------------------------------

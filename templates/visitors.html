@@ -90,17 +90,15 @@
 </div>
 
 <!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 <!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <!-- Leaflet MarkerCluster Plugin (for grouping markers) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
     // Initialize the map centered on Nebraska (WNCC location)
@@ -136,14 +134,16 @@
 
                     // Create popup content with visit count
                     const visitText = loc.visit_count === 1 ? '1 visit' : `${loc.visit_count} visits`;
+                    const firstDate = loc.first_visit_utc ? new Date(loc.first_visit_utc).toLocaleDateString() : loc.first_visit;
+                    const lastDate = loc.last_visit_utc ? new Date(loc.last_visit_utc).toLocaleString() : loc.last_visit;
                     const popupContent = `
                         <div style="min-width: 220px;">
                             <strong>${loc.city || 'Unknown City'}</strong><br>
                             ${loc.region || ''} ${loc.country || ''}<br>
                             <hr style="margin: 8px 0;">
                             <strong>Visits:</strong> ${loc.visit_count}<br>
-                            <small><strong>First:</strong> ${new Date(loc.first_visit).toLocaleDateString()}</small><br>
-                            <small><strong>Last:</strong> ${new Date(loc.last_visit).toLocaleString()}</small>
+                            <small><strong>First:</strong> ${firstDate}</small><br>
+                            <small><strong>Last:</strong> ${lastDate}</small>
                         </div>
                     `;
 
@@ -181,7 +181,7 @@
             stats.recent_visitors.forEach(visitor => {
                 const row = document.createElement('tr');
                 const location = `${visitor.city || 'Unknown'}, ${visitor.region || ''} ${visitor.country || ''}`.trim();
-                const time = new Date(visitor.last_visit).toLocaleString();
+                const time = visitor.last_visit_iso ? new Date(visitor.last_visit_iso).toLocaleString() : visitor.last_visit;
                 const visitBadge = visitor.visit_count > 1
                     ? `<span class="badge bg-primary">${visitor.visit_count}</span>`
                     : visitor.visit_count;

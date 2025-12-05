@@ -176,7 +176,8 @@ def get_visitor_stats():
                     "country": v.country,
                     "visit_count": v.visit_count,
                     "first_visit": to_mountain_time(v.first_visit),
-                    "last_visit": to_mountain_time(v.last_visit)
+                    "last_visit": to_mountain_time(v.last_visit),
+                    "last_visit_iso": v.last_visit.isoformat() if v.last_visit else None
                 }
                 for v in recent_visitors
             ],
