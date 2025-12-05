@@ -122,3 +122,20 @@ class Photo(db.Model):
 
     def __repr__(self):
         return f'<Photo {self.filename}>'
+
+
+class Video(db.Model):
+    """Model for video listings (YouTube embeds)."""
+    __tablename__ = 'video'
+    __bind_key__ = None  # Use the default database connection
+
+    id = db.Column(db.Integer, primary_key=True)
+    youtube_id = db.Column(db.String(20), nullable=False)  # YouTube video ID
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    # Integer position for manual ordering. Lower numbers display first.
+    position = db.Column(db.Integer, nullable=False, default=0, index=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f'<Video {self.youtube_id}: {self.title}>'

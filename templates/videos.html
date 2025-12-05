@@ -1,16 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('blog_bp.static', filename='css/blog.css') }}">
 <div class="container py-4">
     <div class="card mb-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h3>🎬 Videos</h3>
+            {% if session['user_id'] is defined %}
+            <a href="{{ url_for('blog_bp.add_video') }}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> Add Video
+            </a>
+            {% endif %}
         </div>
         <div class="card-body">
-            <div class="row g-4">
+            <div class="row g-4" id="videos-gallery">
                 {% for v in videos %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm">
+                <div class="col-md-6 col-lg-4 video-item" data-video-id="{{ v.db_id }}">
+                    <div class="card h-100 shadow-sm position-relative">
+                        {% if session['user_id'] is defined %}
+                        <button class="btn btn-sm position-absolute top-0 start-0 m-2 drag-handle" title="Drag to reorder" aria-label="Drag to reorder" style="z-index: 10;">☰</button>
+                        <a href="{{ url_for('blog_bp.edit_video', video_id=v.db_id) }}" class="btn btn-sm position-absolute top-0 end-0 m-2 edit-handle" title="Edit Video" style="z-index: 10;">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        {% endif %}
                         <a href="https://www.youtube.com/watch?v={{ v.id }}" target="_blank" class="text-decoration-none">
                             <img src="https://img.youtube.com/vi/{{ v.id }}/hqdefault.jpg" class="card-img-top" alt="{{ v.title }}">
                         </a>
@@ -35,4 +47,41 @@
         </div>
     </div>
 </div>
+
+{% if session['user_id'] is defined %}
+<!-- SortableJS for drag-and-drop reordering -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const gallery = document.getElementById('videos-gallery');
+    if (!gallery) return;
+
+    const sortable = Sortable.create(gallery, {
+        animation: 150,
+        handle: '.drag-handle',
+        draggable: '.video-item',
+        ghostClass: 'sortable-ghost',
+        onEnd: function (evt) {
+            // Build order array from DOM
+            const items = gallery.querySelectorAll('.video-item');
+            const order = Array.from(items).map(function (it) {
+                return parseInt(it.getAttribute('data-video-id'), 10);
+            });
+            // POST new order to server
+            fetch('{{ url_for('blog_bp.reorder_videos') }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order: order })
+            }).then(function (resp) {
+                if (!resp.ok) {
+                    console.error('Failed to save order');
+                }
+            }).catch(function (err) {
+                console.error('Reorder error', err);
+            });
+        }
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

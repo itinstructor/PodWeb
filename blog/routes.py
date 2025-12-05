@@ -1,5 +1,5 @@
 from flask import send_from_directory
-from .models import BlogPost, Photo  # Make sure BlogPost and Photo are imported
+from .models import BlogPost, Photo, Video  # Make sure BlogPost, Photo, Video are imported
 from flask import current_app, render_template
 from . import blog_bp
 try:
@@ -523,16 +523,111 @@ def photos_gallery():
 
 @blog_bp.route('/videos')
 def videos():
-    """Videos listing page."""
-    # Example static list; can be replaced with DB-driven list later.
-    videos = [
+    """Videos listing page with DB-driven list."""
+    videos_query = Video.query.order_by(Video.position.asc(), Video.id).all()
+    videos_list = [
         {
-            'id': 'iYXiKHRuhz4',
-            'title': 'Pods In Space — Project Overview',
-            'description': 'Introductory video for the Pods In Space project.'
-        },
+            'db_id': v.id,
+            'id': v.youtube_id,
+            'title': v.title,
+            'description': v.description or '',
+            'position': v.position,
+        }
+        for v in videos_query
     ]
-    return render_template('videos.html', videos=videos)
+    return render_template('videos.html', videos=videos_list)
+
+
+@blog_bp.route('/videos/add', methods=['GET', 'POST'])
+@login_required
+def add_video():
+    """Add a new video."""
+    if request.method == 'POST':
+        youtube_id = request.form.get('youtube_id', '').strip()
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        
+        if not youtube_id or not title:
+            flash('YouTube ID and title are required.', 'danger')
+            return redirect(request.url)
+        
+        # Extract video ID if full URL was pasted
+        if 'youtube.com' in youtube_id or 'youtu.be' in youtube_id:
+            import re
+            match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})', youtube_id)
+            if match:
+                youtube_id = match.group(1)
+        
+        # Get next position
+        max_pos = db.session.query(db.func.max(Video.position)).scalar() or 0
+        
+        video = Video(youtube_id=youtube_id, title=title, description=description, position=max_pos + 1)
+        db.session.add(video)
+        db.session.commit()
+        flash('Video added successfully!', 'success')
+        return redirect(url_for('blog_bp.videos'))
+    
+    return render_template('blog_add_video.html')
+
+
+@blog_bp.route('/videos/<int:video_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_video(video_id):
+    """Edit or delete a video."""
+    video = Video.query.get_or_404(video_id)
+    if request.method == 'POST':
+        if 'delete' in request.form:
+            db.session.delete(video)
+            db.session.commit()
+            flash('Video deleted successfully.', 'success')
+            return redirect(url_for('blog_bp.videos'))
+        
+        youtube_id = request.form.get('youtube_id', '').strip()
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        
+        if not youtube_id or not title:
+            flash('YouTube ID and title are required.', 'danger')
+            return redirect(request.url)
+        
+        # Extract video ID if full URL was pasted
+        if 'youtube.com' in youtube_id or 'youtu.be' in youtube_id:
+            import re
+            match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})', youtube_id)
+            if match:
+                youtube_id = match.group(1)
+        
+        video.youtube_id = youtube_id
+        video.title = title
+        video.description = description
+        db.session.commit()
+        flash('Video updated successfully.', 'success')
+        return redirect(url_for('blog_bp.videos'))
+    
+    return render_template('blog_edit_video.html', video=video)
+
+
+@blog_bp.route('/videos/reorder', methods=['POST'])
+@login_required
+def reorder_videos():
+    """Accept JSON payload with new order: {"order": [id1, id2, ...]} and update positions."""
+    data = request.get_json(silent=True)
+    if not data or 'order' not in data:
+        return jsonify({'error': 'Missing order data'}), 400
+    try:
+        order = data['order']
+        if not isinstance(order, list):
+            raise ValueError('Order must be a list')
+        for idx, vid in enumerate(order):
+            video = Video.query.get(vid)
+            if video:
+                video.position = idx
+        db.session.commit()
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error reordering videos: {e}")
+        return jsonify({'error': 'Could not save order'}), 500
 
 
 @blog_bp.route('/photos/<int:photo_id>/edit', methods=['GET', 'POST'])
