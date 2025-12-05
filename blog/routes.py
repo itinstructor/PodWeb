@@ -2,13 +2,14 @@ from flask import send_from_directory
 from .models import BlogPost, Photo, Video  # Make sure BlogPost, Photo, Video are imported
 from flask import current_app, render_template
 from . import blog_bp
+from turnstile import SESSION_VERIFIED_KEY
 try:
     from sqlalchemy.orm import selectinload
     from database import db  # Fixed: import from database.py to avoid circular import
 except Exception:
     db = None  # fallback if not needed in this module path
 
-from flask import render_template, request, redirect, url_for, flash, session, abort, jsonify, current_app, make_response
+from flask import render_template, request, redirect, url_for, flash, session, abort, jsonify, current_app, make_response, get_flashed_messages
 from .models import User, BlogPost, BlogImage, LoginAttempt
 from .auth import validate_password, get_client_ip, log_login_attempt
 from .utils import save_uploaded_image
@@ -19,11 +20,42 @@ import os
 import secrets
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
+import time
 
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 UPLOAD_FOLDER = os.path.join(os.path.dirname(
     os.path.dirname(__file__)), 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+
+@blog_bp.before_request
+def clear_stale_flashes_for_logged_out():
+    """If the user is logged out, aggressively clear any leftover flash messages.
+    
+    This prevents old photo operation flashes from appearing after logout.
+    Uses a timestamp approach: if user_id is absent AND logout_time exists,
+    we know we just logged out and should suppress all flashes from the cookie.
+    """
+    if 'user_id' not in session:
+        # User is logged out
+        logout_time = session.get('_logout_time')
+
+        # Consume and discard any flashes loaded from the cookie
+        consumed = get_flashed_messages(with_categories=True)
+        if consumed:
+            logging.debug("Consumed %d stale flashes for logged-out user: %s", len(consumed), consumed)
+
+        # Clear the session flash list so it won't be re-serialized
+        if '_flashes' in session:
+            session.pop('_flashes', None)
+            session.modified = True
+
+        if logout_time:
+            # Within 1 minute of logout, clear the marker as well
+            current_time = time.time()
+            if current_time - logout_time < 60:
+                session.pop('_logout_time', None)
+                session.modified = True
 
 
 def login_required(f):
@@ -59,6 +91,8 @@ def index():
 @blog_bp.route('/blog')
 def blog():
     """Blog listing page - only show published posts."""
+    logging.info("Blog index load. Session keys: %s", list(session.keys()))
+    logging.info("Session user id: %s", session.get('user_id'))
     user = User.query.get(session.get('user_id')
                           ) if 'user_id' in session else None
     # Optimization: Use selectinload to avoid N+1 queries for author usernames in the template.
@@ -241,11 +275,32 @@ def login():
 
 @blog_bp.route('/logout')
 def logout():
-    """Log out current user."""
-    session.clear()
-    flash('You have been logged out.', 'info')
-    # After logout, return to the blog listing so the application context remains correct
-    return redirect(url_for('blog_bp.blog'))
+    """Log out current user and force the session cookie to reset."""
+    logging.info("Blog logout requested. Session keys before logout: %s", list(session.keys()))
+
+    # Mark logout time and strip auth keys
+    session['_logout_time'] = time.time()
+    session.pop('user_id', None)
+    session.pop('username', None)
+    session.pop('_flashes', None)
+
+    session.permanent = False
+    session.modified = True
+
+    # Redirect to blog page
+    resp = redirect(url_for('blog_bp.blog'))
+
+    # Delete the session cookie on all relevant paths (Flask 2.x uses config key)
+    cookie_name = current_app.config.get('SESSION_COOKIE_NAME', 'session')
+    for path in ('/', '/podsinspace', '/podsinspace/'):
+        resp.delete_cookie(cookie_name, path=path)
+
+    # Prevent caching
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+
+    return resp
 
 
 @blog_bp.route('/dashboard')

@@ -352,7 +352,15 @@ def init_turnstile(app):
             f"{app_root}/health",
             f"{app_root}/server_info",
             f"{app_root}/api/",  # Allow API endpoints for AJAX calls
+            f"{app_root}/logout",  # Allow logout without Turnstile check
+            app_root,  # Allow landing page without challenge
+            f"{app_root}/",  # Trailing slash variant for landing page
             "/podsinspace/api/",  # Explicit fallback for API routes
+            "/podsinspace/logout",  # Explicit fallback for logout
+            "/turnstile/",  # Without prefix
+            "/static/",  # Without prefix
+            "/api/",  # Without prefix
+            "/logout",  # Without prefix - this is likely the actual path
         ]
         if any(path.startswith(p) for p in skip_paths):
             return

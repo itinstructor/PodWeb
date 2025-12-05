@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('blog_bp.static', filename='css/blog.css') }}">
-<div class="container py-4">
+<div class="container">
+    <h1>🎬 Pods In Space Videos</h1>
+    <p class="lead">Video content from the NASA Martian regolith experiment</p>
+
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>🎬 Videos</h3>
+            <h3 class="mb-0">Videos</h3>
             {% if session['user_id'] is defined %}
             <a href="{{ url_for('blog_bp.add_video') }}" class="btn btn-success btn-sm">
                 <i class="bi bi-plus-circle"></i> Add Video
