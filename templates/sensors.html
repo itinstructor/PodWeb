@@ -14,7 +14,7 @@
         </div>
         <div class="card-body">
             <div class="row" id="sensor-widgets">
-                <div class="col-lg-3 col-md-6 mb-3">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 mb-3">
                     <div class="card text-center bg-light">
                         <div class="card-body">
                             <h6 class="card-title text-muted">Soil Moisture</h6>
@@ -23,7 +23,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-3">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 mb-3">
                     <div class="card text-center bg-light">
                         <div class="card-body">
                             <h6 class="card-title text-muted">CO2 ppm</h6>
@@ -32,16 +32,25 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-3">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 mb-3">
                     <div class="card text-center bg-light">
                         <div class="card-body">
                             <h6 class="card-title text-muted">Temperature</h6>
                             <h2 class="display-4 text-dark" id="field2">--</h2>
+                            <p class="text-muted small">°F</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 mb-3">
+                    <div class="card text-center bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted">Temperature</h6>
+                            <h2 class="display-4 text-dark" id="field2c">--</h2>
                             <p class="text-muted small">°C</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-3">
+                <div class="col-xl-2 col-lg-4 col-md-4 col-sm-6 mb-3">
                     <div class="card text-center bg-light">
                         <div class="card-body">
                             <h6 class="card-title text-muted">Humidity</h6>
@@ -110,8 +119,16 @@
                         if (data) {
                             // CO2
                             document.getElementById('field1').textContent = data.field1 ? parseFloat(data.field1).toFixed(0) : '--';
-                            // Temperature
-                            document.getElementById('field2').textContent = data.field2 ? parseFloat(data.field2).toFixed(1) : '--';
+                            // Temperature Fahrenheit
+                            const tempF = data.field2 ? parseFloat(data.field2) : null;
+                            document.getElementById('field2').textContent = tempF !== null ? tempF.toFixed(1) : '--';
+                            // Temperature Celsius (convert from F to C)
+                            if (tempF !== null) {
+                                const tempC = (tempF - 32) * 5 / 9;
+                                document.getElementById('field2c').textContent = tempC.toFixed(1);
+                            } else {
+                                document.getElementById('field2c').textContent = '--';
+                            }
                             // Humidity
                             document.getElementById('field3').textContent = data.field3 ? parseFloat(data.field3).toFixed(0) : '--';
                             // Soil Moisture
