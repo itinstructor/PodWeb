@@ -138,6 +138,18 @@ try:
 except Exception as e:
     logging.exception("Failed to register Mars Blog blueprint")
     logging.error(f"Error details: {str(e)}")
+
+# Register stream recording blueprint
+logging.info("Attempting to import stream recording blueprint...")
+try:
+    from recording_routes import recording_bp
+    
+    logging.info(f"Recording blueprint imported: {recording_bp}")
+    app.register_blueprint(recording_bp, url_prefix="/podsinspace/recording")
+    logging.info("Recording blueprint registered at /podsinspace/recording")
+except Exception as e:
+    logging.exception("Failed to register stream recording blueprint")
+    logging.error(f"Error details: {str(e)}")
     
 # Import Post model for the index page query
 try:
@@ -337,6 +349,9 @@ def index():
     # Build fish camera proxy URL (still goes through this Flask app)
     # No longer passing host/port as query params to hide them from client
     stream_url = url_for("stream_proxy")
+    
+    # Also build the upstream camera URL for direct FFmpeg access (for recording)
+    upstream_camera_url = f"http://{DEFAULT_STREAM_HOST}:{DEFAULT_STREAM_PORT}{DEFAULT_STREAM_PATH_0}"
 
     # Query for the latest blog posts to display on the homepage
     latest_posts = []
@@ -350,6 +365,7 @@ def index():
     return render_template(
         "index.html",
         stream_url=stream_url,
+        upstream_camera_url=upstream_camera_url,
         timestamp=int(time.time()),  # basic cache-buster
         latest_sarah_posts=latest_posts # Pass the posts to the template
     )

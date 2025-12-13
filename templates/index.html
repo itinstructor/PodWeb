@@ -13,11 +13,26 @@
 
   <!-- Live Camera Stream (Full Width, Natural Height) -->
   <div class="card mb-4">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">🦗 PodCast Live Stream</h5>
-      <a href="{{ stream_url }}" target="_blank" class="btn btn-light btn-sm">
-        <i class="bi bi-arrows-fullscreen"></i> Full Screen
-      </a>
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap">
+      <h5 class="mb-2 mb-lg-0">🦗 PodCast Live Stream</h5>
+      <div class="d-flex gap-2 flex-wrap">
+        {% if session.get('user_id') %}
+        <div class="btn-group" role="group">
+          <button type="button" class="btn btn-light btn-sm" id="recordBtn" title="Start recording stream">
+            <i class="bi bi-circle-fill" style="color: red;"></i> Record
+          </button>
+          <button type="button" class="btn btn-light btn-sm" id="downloadBtn" disabled title="Download recorded video">
+            <i class="bi bi-download"></i> Download
+          </button>
+        </div>
+        <div id="recordingTimer" style="display: none; padding: 0.375rem 0.75rem; background-color: #dc3545; color: white; border-radius: 0.25rem; font-weight: bold; font-size: 0.875rem; font-family: monospace;">
+          00:00
+        </div>
+        {% endif %}
+        <a href="{{ stream_url }}" target="_blank" class="btn btn-light btn-sm">
+          <i class="bi bi-arrows-fullscreen"></i> Full Screen
+        </a>
+      </div>
     </div>
     <div class="card-body p-0">
       <div id="live-stream-container" style="position: relative; display: inline-block; width: 100%; height: 665px;">
@@ -29,6 +44,7 @@
           </div>
         </div>
         <img id="live-stream-img" src="{{ stream_url }}?t={{ timestamp }}" alt="Live Stream"
+          data-camera-url="{{ upstream_camera_url }}"
           style="display: block; margin: 0 auto; max-width: 100%; height: 665px; object-fit: contain; z-index: 1; position: relative;"
           onload="document.getElementById('live-stream-loading').style.display='none';">
       </div>
@@ -67,5 +83,9 @@
   {% endif %}
 
 </div>
+
+{% if session.get('user_id') %}
+<script src="{{ url_for('static', filename='js/stream-recorder.js') }}"></script>
+{% endif %}
 
 {% endblock %}
