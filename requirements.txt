@@ -21,7 +21,5 @@ geoip2>=4.6.0
 python-slugify>=8.0.1
 Pillow>=10.0.0
 
-
-
 # Environment variables from .env file
 python-dotenv>=1.0.0
